@@ -1,0 +1,1687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c0e12">
+<title>Focus Pull</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: the TV is a camera viewfinder. Photo full-bleed, HUD on the frame edges, every decision in one floating panel.
+   Setup is a two-column console; the phone remote is one column of thumb-sized controls. Single dark look on purpose: game night, lights low. */
+:root{
+  --ink:#0c0e12;
+  --panel:#151920;
+  --panel-2:#1e232c;
+  --line:#2d3441;
+  --line-2:#47505f;
+  --text:#f2f3f5;
+  --muted:#9aa2af;
+  --lock:#4ade80;
+  --miss:#ff6a5c;
+  --scrim:rgba(8,10,13,.62);
+  --scrim-2:rgba(12,14,19,.9);
+  --p1:#3ec6ff; --p2:#ff58a8; --p3:#ffd23f; --p4:#ab8cff;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+html{font-size:max(12px, calc(3px + 1.7vmin))}
+html.remote-mode{font-size:16px}
+body{position:relative;background:var(--ink);color:var(--text);font-family:var(--body);font-size:1rem;line-height:1.4;overflow:hidden;-webkit-font-smoothing:antialiased}
+h1,h2,h3,p{margin:0}
+h1,h2{text-wrap:balance}
+.muted{color:var(--muted)}
+.screen{position:absolute;inset:0}
+
+/* ---------- controls ---------- */
+button,.btn{font:inherit;font-weight:650;font-size:1rem;line-height:1.15;color:var(--text);background:var(--panel-2);border:2px solid var(--line);border-radius:.6em;padding:.6em 1.05em;min-height:2.75em;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:.55em;text-decoration:none;transition:transform .12s ease,background-color .12s ease,border-color .12s ease;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:hover,.btn:hover{border-color:var(--line-2)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.4;cursor:default}
+button:focus-visible,.btn:focus-visible,input:focus-visible{outline:none;box-shadow:0 0 0 .18em var(--ink),0 0 0 .38em var(--text)}
+button:focus-visible,.btn:focus-visible{transform:scale(1.04)}
+.primary{background:var(--text);color:var(--ink);border-color:var(--text);font-weight:800}
+.primary:hover{border-color:var(--text)}
+.ghost{background:transparent}
+.small{font-size:.85rem;min-height:2.3em;padding:.4em .8em}
+.icon{min-height:2.3em;width:2.3em;padding:0;font-size:1.2rem;background:transparent}
+.kbd{font-family:var(--mono);font-size:.72em;font-weight:600;border:1.5px solid currentColor;border-radius:.35em;padding:.05em .4em;opacity:.75}
+input[type=text]{font:inherit;font-size:1.05rem;color:var(--text);background:var(--ink);border:2px solid var(--line);border-radius:.5em;padding:.55em .7em;width:100%;min-width:0}
+input[type=text]:focus{border-color:var(--line-2)}
+.row{display:flex;flex-wrap:wrap;gap:.7rem;align-items:center}
+.row.end{justify-content:flex-end}
+.status{color:var(--muted);font-size:.92rem;min-height:1.3em}
+.status.bad{color:var(--miss)}
+.status.good{color:var(--lock)}
+.eyebrow{font-family:var(--mono);font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.qr{background:#fff;border-radius:.7rem;padding:.55rem;width:9.5rem;aspect-ratio:1;max-width:100%;flex:none;display:grid;place-items:center;color:#222;font-size:.75rem;text-align:center}
+.qr svg{width:100%;height:100%;display:block}
+
+/* ---------- setup ---------- */
+.setup{overflow-y:auto;padding-block:3vmin;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.setup-wrap{max-width:96rem;margin:0 auto;padding-inline:2vmin;display:flex;flex-direction:column;gap:2.4vmin;min-height:100%}
+.brand{display:flex;flex-wrap:wrap;align-items:flex-end;gap:1rem 2.2rem}
+.logo{display:flex;align-items:center;gap:.9rem}
+.logo-ring{width:3.1rem;height:3.1rem;border-radius:50%;flex:none;border:.32rem solid var(--text);box-shadow:inset 0 0 0 .32rem var(--ink),inset 0 0 0 .62rem var(--line-2);position:relative}
+.logo-ring::after{content:"";position:absolute;inset:-.75rem;border-radius:50%;background:repeating-conic-gradient(var(--muted) 0 1.5deg,transparent 1.5deg 15deg);-webkit-mask:radial-gradient(circle,transparent 58%,#000 59%,#000 66%,transparent 67%);mask:radial-gradient(circle,transparent 58%,#000 59%,#000 66%,transparent 67%)}
+h1{font-family:var(--display);font-variation-settings:"wdth" 125;font-weight:850;font-size:3.3rem;letter-spacing:-.015em;line-height:1}
+h1 .soft{display:inline-block;animation:pull 1.6s cubic-bezier(.2,.7,.2,1) .2s both}
+@keyframes pull{from{filter:blur(14px);opacity:.55}to{filter:blur(0);opacity:1}}
+.tag{max-width:46ch;color:var(--muted);font-size:1.05rem;flex:1 1 22rem}
+.brand .ghost{margin-left:auto}
+.setup-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2vmin}
+.card{background:var(--panel);border-radius:1rem;padding:2.4vmin 2.8vmin;display:flex;flex-direction:column;gap:1.1rem;min-width:0}
+.card h2{font-family:var(--display);font-variation-settings:"wdth" 110;font-weight:800;font-size:1.35rem;letter-spacing:.005em}
+.player-list{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+.player-list li{display:flex;align-items:center;gap:.7rem}
+.swatch{width:1.1rem;height:1.1rem;border-radius:50%;background:var(--pc);flex:none}
+.photo-count{display:flex;align-items:center;gap:1rem}
+.big-n{font-family:var(--display);font-variation-settings:"wdth" 110;font-weight:850;font-size:3.4rem;line-height:1;font-variant-numeric:tabular-nums}
+.photo-count small{font-size:.85rem}
+.note{font-size:.9rem;color:var(--muted);max-width:60ch}
+.sets{display:flex;flex-direction:column;gap:.55rem}
+.set-btn .n{font-family:var(--mono);font-size:.78em;font-weight:600;color:var(--muted)}
+.note b{color:var(--text);font-weight:650}
+details.gsetup summary{cursor:pointer;color:var(--muted);font-size:.9rem}
+details.gsetup .row{margin-top:.6rem}
+details.gsetup input{flex:1 1 14rem}
+.field{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.6rem 1rem}
+.label{color:var(--muted)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:.4rem}
+.seg button{min-width:3.6em;font-family:var(--mono);font-weight:600;font-size:.95rem}
+.seg button[aria-pressed=true]{background:var(--text);color:var(--ink);border-color:var(--text)}
+.phone-body{display:flex;gap:1.3rem;align-items:center;flex-wrap:wrap}
+.phone-body > div:last-child{flex:1 1 14rem;display:flex;flex-direction:column;gap:.5rem;min-width:0}
+.code{font-family:var(--mono);color:var(--muted);font-size:.9rem}
+.code b{color:var(--text);letter-spacing:.12em;font-size:1.05rem}
+.setup-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.2rem;margin-top:auto;padding-top:.5rem}
+.howto{display:flex;flex-wrap:wrap;gap:.5rem 1.8rem;margin:0;padding:0;list-style:none;counter-reset:s;color:var(--muted)}
+.howto li{counter-increment:s;display:flex;gap:.5rem;align-items:baseline}
+.howto li::before{content:counter(s);font-family:var(--mono);font-weight:600;color:var(--text)}
+#startBtn{font-size:1.35rem;padding:.6em 1.8em}
+.start-hint{color:var(--muted);font-size:.9rem}
+
+/* ---------- round ---------- */
+.round{background:#000;overflow:hidden}
+#photo,#bg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#bg{filter:blur(26px) brightness(.36) saturate(1.25);transform:scale(1.2)}
+.vf{position:absolute;inset:4vmin;pointer-events:none}
+.vf i{position:absolute;width:7vmin;height:7vmin;border:.5vmin solid var(--text);opacity:.8;transition:border-color .2s,opacity .2s}
+.vf i:nth-child(1){top:0;left:0;border-right:0;border-bottom:0}
+.vf i:nth-child(2){top:0;right:0;border-left:0;border-bottom:0}
+.vf i:nth-child(3){bottom:0;left:0;border-right:0;border-top:0}
+.vf i:nth-child(4){bottom:0;right:0;border-left:0;border-top:0}
+.round.locked .vf i{border-color:var(--lock);opacity:1}
+.hud-top{position:absolute;top:calc(5.5vmin + env(safe-area-inset-top, 0px));left:calc(6vmin + env(safe-area-inset-left, 0px));right:calc(6vmin + env(safe-area-inset-right, 0px));display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;pointer-events:none}
+.hud-tag{font-family:var(--mono);font-weight:600;font-size:1rem;letter-spacing:.1em;text-transform:uppercase;background:var(--scrim);padding:.35em .75em;border-radius:.4em;font-variant-numeric:tabular-nums}
+.hud-tag.af{color:var(--lock);display:none}
+.round.locked .hud-tag.af{display:inline-block}
+.hud-left{display:flex;gap:.6rem;flex-wrap:wrap}
+.worth{text-align:right;background:var(--scrim);padding:.5em .9em .6em;border-radius:.6rem}
+.worth-n{display:block;font-family:var(--display);font-variation-settings:"wdth" 112;font-weight:850;font-size:4.6rem;line-height:.95;font-variant-numeric:tabular-nums}
+.worth-l{display:block;font-family:var(--mono);font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.hud-bottom{position:absolute;left:calc(6vmin + env(safe-area-inset-left, 0px));right:calc(6vmin + env(safe-area-inset-right, 0px));bottom:calc(5.5vmin + env(safe-area-inset-bottom, 0px));display:flex;flex-direction:column;gap:1.4vmin;pointer-events:none}
+.scale{--s:0;background:var(--scrim);border-radius:.6rem;padding:.7rem 1rem .55rem}
+.scale-track{position:relative;height:.55rem;border-radius:1rem;background:rgba(255,255,255,.16)}
+.scale-fill{position:absolute;inset:0 auto 0 0;width:calc(var(--s) * 100%);border-radius:inherit;background:var(--text)}
+.round.locked .scale-fill{background:var(--lock)}
+.scale-needle{position:absolute;top:50%;left:calc(var(--s) * 100%);width:1.3rem;height:1.3rem;border-radius:50%;background:var(--text);border:.25rem solid var(--ink);transform:translate(-50%,-50%)}
+.round.locked .scale-needle{background:var(--lock)}
+.scale-ticks{position:relative;height:.55rem;margin-top:.35rem}
+.scale-ticks span{position:absolute;top:0;width:2px;height:.4rem;background:var(--muted);transform:translateX(-1px)}
+.scale-ticks span.major{height:.6rem;background:var(--text)}
+.scale-labels{position:relative;height:1.2em;font-family:var(--mono);font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.scale-labels span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.scale-labels span:first-child{transform:none}
+.scale-labels span:last-child{transform:translateX(-100%)}
+.scores{display:flex;flex-wrap:wrap;justify-content:center;gap:.7rem}
+.chip{display:inline-flex;align-items:center;gap:.6rem;background:var(--scrim-2);border:2px solid transparent;border-radius:2rem;padding:.35em .95em .35em .6em;font-weight:700;font-size:1.15rem;transition:opacity .2s,background-color .2s}
+.chip .dot{width:.9em;height:.9em;border-radius:50%;background:var(--pc)}
+.chip .pts{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums;color:var(--muted)}
+.chip.out{opacity:.45}
+.chip.out .nm{text-decoration:line-through}
+.chip.guess{border-color:var(--pc)}
+.chip.lead .pts{color:var(--text)}
+.stop{position:absolute;left:50%;bottom:calc(7vmin + 7.2rem + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);font-family:var(--display);font-variation-settings:"wdth" 120;font-weight:900;font-size:2.1rem;letter-spacing:.06em;padding:.45em 1.6em;border-radius:3rem;background:var(--text);color:var(--ink);border-color:var(--text);box-shadow:0 .6rem 2rem rgba(0,0,0,.5)}
+.stop:focus-visible{transform:translateX(-50%) scale(1.04)}
+.stop:active{transform:translateX(-50%) scale(.97)}
+.stop .kbd{font-size:.42em;letter-spacing:0}
+.panel{position:absolute;left:50%;bottom:calc(7vmin + 7.2rem + env(safe-area-inset-bottom, 0px));transform:translateX(-50%);width:min(calc(100% - 32px),62rem);background:var(--scrim-2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1.5px solid var(--line);border-radius:1.1rem;padding:2.4vmin 3vmin;display:flex;flex-direction:column;gap:1.2rem;animation:rise .22s ease-out both}
+@keyframes rise{from{opacity:0;transform:translate(-50%,1rem)}to{opacity:1;transform:translate(-50%,0)}}
+.panel h2{font-family:var(--display);font-variation-settings:"wdth" 108;font-weight:800;font-size:2.1rem;line-height:1.1}
+.panel .sub{color:var(--muted);font-size:1.05rem}
+.pick-row{display:flex;flex-wrap:wrap;gap:.9rem}
+.pick-row button{flex:1 1 11rem;font-size:1.5rem;font-weight:800;background:var(--pc);color:var(--ink);border-color:var(--pc);min-height:3em}
+.judge-row{display:flex;flex-wrap:wrap;gap:.9rem}
+.judge-row button{flex:1 1 12rem;font-size:1.5rem;font-weight:800;min-height:3em}
+.btn-right{background:var(--lock);border-color:var(--lock);color:var(--ink)}
+.btn-wrong{background:var(--miss);border-color:var(--miss);color:var(--ink)}
+.result{display:flex;align-items:baseline;flex-wrap:wrap;gap:.2rem 1.1rem}
+.result .plus{font-family:var(--display);font-variation-settings:"wdth" 112;font-weight:900;font-size:4.2rem;line-height:1;color:var(--pc);font-variant-numeric:tabular-nums}
+.result .who{font-family:var(--display);font-weight:800;font-size:2.2rem}
+.meta{font-family:var(--mono);color:var(--muted);font-size:.95rem}
+.answer{font-family:var(--display);font-variation-settings:"wdth" 105;font-weight:800;font-size:1.6rem;line-height:1.15}
+.panel .meta{font-size:.82rem}
+.panel.compact{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.6rem 1.6rem;bottom:calc(7.5vmin + 2.8rem + env(safe-area-inset-bottom, 0px));padding:1.5vmin 2.4vmin}
+.panel.compact .stack{display:flex;flex-direction:column;gap:.2rem;min-width:0}
+.panel.compact .plus{font-size:3.2rem}
+.panel.compact .who{font-size:1.9rem}
+.round.revealing .scale{display:none}
+.ready{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.ready-card{text-align:center;background:var(--scrim);padding:2.5vmin 5vmin;border-radius:1rem;animation:fadeio 1.5s ease both}
+.ready-card .eyebrow{font-size:1.05rem;color:var(--text)}
+.ready-card p:last-child{font-family:var(--display);font-variation-settings:"wdth" 120;font-weight:900;font-size:4rem;line-height:1.05}
+@keyframes fadeio{0%{opacity:0;transform:scale(.96)}15%,80%{opacity:1;transform:scale(1)}100%{opacity:0}}
+.toast{position:absolute;top:calc(20vmin + env(safe-area-inset-top, 0px));left:50%;transform:translateX(-50%);background:var(--miss);color:var(--ink);font-weight:800;font-size:1.35rem;padding:.6em 1.2em;border-radius:.7rem;max-width:calc(100% - 32px);text-align:center;animation:fadeio 2.4s ease both;pointer-events:none}
+.quit{position:absolute;top:calc(5.5vmin + env(safe-area-inset-top, 0px));left:50%;transform:translateX(-50%);opacity:.0;transition:opacity .2s}
+.round:hover .quit,.quit:focus-visible{opacity:1}
+.quit:focus-visible{transform:translateX(-50%) scale(1.04)}
+
+/* ---------- final ---------- */
+.final{display:grid;place-items:center;overflow-y:auto;padding-block:4vmin;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.final-wrap{width:min(100%,58rem);display:flex;flex-direction:column;gap:2.4vmin}
+.final h2{font-family:var(--display);font-variation-settings:"wdth" 122;font-weight:900;font-size:4.2rem;line-height:1}
+.standings{list-style:none;margin:0;padding:0;display:grid;gap:1rem}
+.standings li{display:grid;grid-template-columns:2.2rem minmax(0,1fr) 5rem;align-items:center;gap:1rem}
+.standings .rank{font-family:var(--mono);font-weight:600;color:var(--muted);font-size:1.2rem}
+.standings .bar{display:flex;flex-direction:column;gap:.45rem;min-width:0}
+.standings .bar span{font-weight:800;font-size:1.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.standings .bar b{display:block;height:.8rem;border-radius:1rem;background:var(--panel-2);overflow:hidden}
+.standings .bar i{display:block;height:100%;width:var(--w);background:var(--pc);border-radius:inherit;transform-origin:left;animation:grow .9s cubic-bezier(.2,.7,.2,1) both}
+.standings li:first-child .bar span{font-size:1.9rem}
+.standings .sc{font-family:var(--display);font-variation-settings:"wdth" 110;font-weight:850;font-size:2rem;text-align:right;font-variant-numeric:tabular-nums}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* ---------- dialog ---------- */
+.dialog{position:absolute;inset:0;background:rgba(5,6,8,.75);display:grid;place-items:center;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));z-index:5}
+.dialog-card{background:var(--panel);border:1.5px solid var(--line);border-radius:1.1rem;padding:3vmin;width:min(100%,46rem);display:flex;flex-direction:column;gap:1.2rem}
+.dialog-card h2{font-family:var(--display);font-variation-settings:"wdth" 110;font-weight:800;font-size:1.7rem}
+.gp-body{display:flex;gap:1.4rem;align-items:center;flex-wrap:wrap}
+.gp-body > div:last-child{flex:1 1 16rem;display:flex;flex-direction:column;gap:.8rem;align-items:flex-start;min-width:0}
+.gp-body .qr{width:12rem}
+
+/* ---------- phone remote ---------- */
+.remote{display:flex;flex-direction:column;overflow-y:auto;font-size:1.2rem;padding-block:14px 18px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));gap:16px}
+.r-head{display:flex;align-items:center;justify-content:space-between;gap:.8rem}
+.r-head .logo-ring{width:1.9rem;height:1.9rem;border-width:.22rem;box-shadow:inset 0 0 0 .22rem var(--ink),inset 0 0 0 .42rem var(--line-2)}
+.r-head .logo-ring::after{display:none}
+.r-head b{font-family:var(--display);font-variation-settings:"wdth" 120;font-weight:850;font-size:1.25rem}
+.pill{font-family:var(--mono);font-size:.78rem;padding:.3em .7em;border-radius:1rem;background:var(--panel-2);color:var(--muted);white-space:nowrap}
+.pill.ok{color:var(--lock)}
+.pill.bad{color:var(--miss)}
+.rv{display:flex;flex-direction:column;gap:14px;flex:1}
+.rv h2{font-family:var(--display);font-variation-settings:"wdth" 108;font-weight:800;font-size:1.6rem;line-height:1.15}
+.rv .card{padding:16px}
+.rv button{font-size:1.15rem;min-height:3.1em}
+.rv .card h3{font-size:1rem;color:var(--muted);font-weight:600}
+.r-players{display:grid;gap:10px}
+.r-players .prow{display:flex;gap:10px;align-items:center}
+.r-big{flex:1;min-height:52vh;border-radius:1.6rem;display:flex;flex-direction:column;gap:.4rem;font-family:var(--display);font-variation-settings:"wdth" 125;font-weight:900;font-size:3.4rem!important;letter-spacing:.05em;background:var(--text);color:var(--ink);border-color:var(--text)}
+.r-big small{font-family:var(--mono);font-size:1rem;font-weight:600;letter-spacing:.06em}
+.r-stack{display:flex;flex-direction:column;gap:12px}
+.r-stack button{width:100%}
+.r-pick button{background:var(--pc);border-color:var(--pc);color:var(--ink);font-weight:800;font-size:1.5rem!important;min-height:3.4em}
+.r-standings{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.r-standings li{display:flex;justify-content:space-between;gap:1rem;background:var(--panel);border-radius:.6rem;padding:.6em .9em;border-left:.4rem solid var(--pc);font-weight:700}
+.r-standings li span:last-child{font-family:var(--mono)}
+.r-sets{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.r-answer{background:var(--panel-2);border-radius:.6rem;padding:.6em .9em;font-weight:700}
+.r-answer small{display:block;font-family:var(--mono);font-weight:500;font-size:.75rem;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.prog{height:.5rem;border-radius:1rem;background:var(--panel-2);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--lock);transition:width .2s}
+
+@media (max-width:760px){
+  .setup-grid{grid-template-columns:minmax(0,1fr)}
+  h1{font-size:2.4rem}
+  .brand .ghost{margin-left:0}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition-duration:.01ms!important}
+}
+</style>
+
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<!-- ======================= TV / host ======================= -->
+<section class="screen setup" id="scr-setup" hidden>
+  <div class="setup-wrap">
+    <header class="brand">
+      <div class="logo"><span class="logo-ring" aria-hidden="true"></span><h1><span class="soft">Focus</span> Pull</h1></div>
+      <p class="tag">A family photo starts as a blur and slowly comes into focus. Shout who is in it, or which country it was taken in. The sooner you get it right, the more you score.</p>
+      <button class="ghost small" id="fsBtn" type="button">Full screen</button>
+    </header>
+
+    <div class="setup-grid">
+      <section class="card" aria-labelledby="h-players">
+        <h2 id="h-players">Players</h2>
+        <ol class="player-list" id="playerList"></ol>
+        <div class="row"><button class="ghost" id="addPlayer" type="button">Add player</button></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-photos">
+        <h2 id="h-photos">Photos</h2>
+        <div class="photo-count">
+          <span id="photoCount" class="big-n">0</span>
+          <span>photos ready<br><small class="muted">Hidden until the game starts</small></span>
+        </div>
+        <div class="row">
+          <button id="gpBtn" type="button">Google Photos</button>
+          <button class="ghost" id="fileBtn" type="button">From this device</button>
+          <button class="ghost small" id="clearBtn" type="button" hidden>Clear photos</button>
+          <input type="file" id="fileIn" accept="image/*" multiple hidden>
+        </div>
+        <div class="sets">
+          <span class="label">Or add a random quiz set</span>
+          <div class="row" id="setRow"></div>
+        </div>
+        <p class="note" id="gpNote" hidden></p>
+        <details class="gsetup" id="gSetup" hidden>
+          <summary>Google Photos setup</summary>
+          <div class="row">
+            <input type="text" id="gcidIn" placeholder="Paste OAuth client ID" autocomplete="off" spellcheck="false">
+            <button class="small" id="gcidSave" type="button">Save</button>
+          </div>
+        </details>
+        <p class="status" id="importStatus" role="status"></p>
+      </section>
+
+      <section class="card" aria-labelledby="h-game">
+        <h2 id="h-game">Game</h2>
+        <div class="field"><span class="label">Time to full focus</span><div class="seg" id="segDuration" role="group" aria-label="Time to full focus"></div></div>
+        <div class="field"><span class="label">Photos per game</span><div class="seg" id="segRounds" role="group" aria-label="Photos per game"></div></div>
+        <div class="field"><span class="label">Sound</span><div class="seg" id="segSound" role="group" aria-label="Sound"></div></div>
+      </section>
+
+      <section class="card" aria-labelledby="h-phone">
+        <h2 id="h-phone">Phone remote</h2>
+        <div class="phone-body" id="phoneBody">
+          <div class="qr" id="qr">Starting…</div>
+          <div>
+            <p>Scan with a phone to use it as the Stop button. You can also type player names and send photos from it.</p>
+            <p class="status" id="linkStatus" role="status"></p>
+            <p class="code" id="codeLine" hidden>Code <b id="linkCode"></b></p>
+          </div>
+        </div>
+        <p class="note" id="phoneNote" hidden></p>
+      </section>
+    </div>
+
+    <footer class="setup-foot">
+      <ol class="howto">
+        <li>Shout your guess</li>
+        <li>Press Stop and pick who shouted</li>
+        <li>A right answer scores 100 minus the sharpness</li>
+      </ol>
+      <div class="row">
+        <span class="start-hint" id="startHint"></span>
+        <button class="primary" id="startBtn" type="button">Start game</button>
+      </div>
+    </footer>
+  </div>
+</section>
+
+<section class="screen round" id="scr-round" hidden>
+  <canvas id="bg" width="64" height="36"></canvas>
+  <canvas id="photo"></canvas>
+  <div class="vf" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <header class="hud-top">
+    <div class="hud-left"><span class="hud-tag" id="roundTag">Photo 1 / 10</span><span class="hud-tag af" id="afTag">AF lock</span></div>
+    <div class="worth"><span class="worth-n" id="worthN">100</span><span class="worth-l" id="worthL">points if right</span></div>
+  </header>
+  <button class="ghost small quit" id="quitBtn" type="button">End game</button>
+  <div class="hud-bottom">
+    <div class="scale" id="scale" aria-hidden="true">
+      <div class="scale-track"><div class="scale-fill"></div><div class="scale-needle"></div></div>
+      <div class="scale-ticks" id="scaleTicks"></div>
+      <div class="scale-labels"><span style="left:0">0% sharp</span><span style="left:25%">25</span><span style="left:50%">50</span><span style="left:75%">75</span><span style="left:100%">100%</span></div>
+    </div>
+    <div class="scores" id="scores"></div>
+  </div>
+  <button class="stop" id="stopBtn" type="button" hidden>Stop <span class="kbd">OK</span></button>
+  <div class="panel" id="panel" hidden></div>
+  <div class="ready" id="ready" hidden></div>
+  <div id="toastHost"></div>
+</section>
+
+<section class="screen final" id="scr-final" hidden>
+  <div class="final-wrap">
+    <p class="eyebrow">Final scores</p>
+    <h2 id="winnerLine">Winner</h2>
+    <ol class="standings" id="standings"></ol>
+    <div class="row">
+      <button class="primary" id="againBtn" type="button">Play again</button>
+      <button class="ghost" id="setupBtn" type="button">Change players or photos</button>
+    </div>
+    <p class="status" id="againHint"></p>
+  </div>
+</section>
+
+<div class="dialog" id="gpDialog" hidden role="dialog" aria-modal="true" aria-labelledby="gpTitle">
+  <div class="dialog-card">
+    <h2 id="gpTitle">Choose photos in Google Photos</h2>
+    <div class="gp-body">
+      <div class="qr" id="gpQr"></div>
+      <div>
+        <p>Scan with a phone signed in to the same Google account, then select the photos you want in the game.</p>
+        <a class="btn ghost" id="gpLink" target="_blank" rel="noopener">Open Google Photos here</a>
+        <p class="status" id="gpStatus" role="status">Waiting for your selection…</p>
+      </div>
+    </div>
+    <div class="row end"><button class="ghost" id="gpCancel" type="button">Cancel</button></div>
+  </div>
+</div>
+
+<!-- ======================= phone remote ======================= -->
+<section class="screen remote" id="scr-remote" hidden>
+  <header class="r-head">
+    <div class="logo"><span class="logo-ring" aria-hidden="true"></span><b>Focus Pull</b></div>
+    <span class="pill" id="rPill">Connecting…</span>
+  </header>
+
+  <div class="rv" data-view="connect" hidden>
+    <h2 id="rConnTitle">Connecting to the TV…</h2>
+    <p class="muted" id="rConnText">Keep the game open on the TV.</p>
+    <div class="card">
+      <h3>Code shown on the TV</h3>
+      <div class="row"><input type="text" id="rCode" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="8"><button id="rConnect" type="button">Connect</button></div>
+    </div>
+  </div>
+
+  <div class="rv" data-view="setup" hidden>
+    <div class="card">
+      <h3>Players</h3>
+      <div class="r-players" id="rPlayers"></div>
+      <button class="ghost" id="rAdd" type="button">Add player</button>
+    </div>
+    <div class="card">
+      <h3 id="rPhotoHead">Photos on the TV: 0</h3>
+      <div class="r-stack">
+        <button id="rFileBtn" type="button">Send photos from this phone</button>
+        <button class="ghost" id="rGpBtn" type="button">Send from Google Photos</button>
+        <a class="btn" id="rGpOpen" target="_blank" rel="noopener" hidden>Open Google Photos</a>
+        <input type="file" id="rFile" accept="image/*" multiple hidden>
+      </div>
+      <h3>Random quiz sets</h3>
+      <div class="r-sets" id="rSets"></div>
+      <p class="status" id="rTvStatus"></p>
+      <div class="prog" id="rProg" hidden><i></i></div>
+      <p class="status" id="rSendStatus" role="status"></p>
+    </div>
+    <button class="primary" id="rStart" type="button">Start game</button>
+  </div>
+
+  <div class="rv" data-view="wait" hidden>
+    <p class="eyebrow" id="rWaitTag">Photo 1 / 10</p>
+    <h2>Get ready…</h2>
+  </div>
+
+  <div class="rv" data-view="stop" hidden>
+    <p class="eyebrow" id="rStopTag">Photo 1 / 10</p>
+    <button class="r-big" id="rStop" type="button">STOP<small id="rWorth">100 points if right</small></button>
+  </div>
+
+  <div class="rv" data-view="pick" hidden>
+    <h2>Who shouted first?</h2>
+    <div class="r-stack r-pick" id="rPick"></div>
+    <button class="ghost" id="rCancel" type="button">Keep going</button>
+  </div>
+
+  <div class="rv" data-view="judge" hidden>
+    <h2 id="rJudgeTitle">Guess</h2>
+    <p class="muted" id="rQuestion">Who is in it, or which country?</p>
+    <p class="r-answer" id="rAnswer" hidden></p>
+    <div class="r-stack">
+      <button class="btn-right" id="rRight" type="button">Correct</button>
+      <button class="btn-wrong" id="rWrong" type="button">Wrong</button>
+      <button class="ghost" id="rBack" type="button">Pick someone else</button>
+    </div>
+  </div>
+
+  <div class="rv" data-view="reveal" hidden>
+    <h2 id="rResult">Result</h2>
+    <p class="muted" id="rResultMeta"></p>
+    <button class="primary" id="rNext" type="button">Next photo</button>
+  </div>
+
+  <div class="rv" data-view="final" hidden>
+    <h2 id="rWinner">Final scores</h2>
+    <ol class="r-standings" id="rStandings"></ol>
+    <div class="r-stack">
+      <button class="primary" id="rAgain" type="button">Play again</button>
+      <button class="ghost" id="rSetup" type="button">Change players or photos</button>
+    </div>
+  </div>
+</section>
+
+<script>
+(() => {
+'use strict';
+
+/* ================= configuration ================= */
+const CONFIG = {
+  // Paste the OAuth client ID from Google Cloud (APIs & Services > Credentials) to turn on Google Photos.
+  // You can also set it from the setup screen, or open the page with ?gcid=YOUR_ID once.
+  GOOGLE_CLIENT_ID: '',
+};
+const LIBS = {
+  peer: 'https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js',
+  qr: 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js',
+  gis: 'https://accounts.google.com/gsi/client',
+};
+const PICKER_API = 'https://photospicker.googleapis.com/v1/';
+const PICKER_SCOPE = 'https://www.googleapis.com/auth/photospicker.mediaitems.readonly';
+const MAX_PHOTOS = 300;
+const PEER_PREFIX = 'focuspull-';
+const COLORS = ['var(--p1)', 'var(--p2)', 'var(--p3)', 'var(--p4)'];
+const DEFAULT_Q = 'Who is in the photo, or which country was it taken in?';
+
+/* ================= helpers ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('fp.' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('fp.' + k, JSON.stringify(v)); } catch {} },
+};
+const uid = () => Math.random().toString(36).slice(2, 8);
+const genCode = () => { const a = 'abcdefghjkmnpqrstuvwxyz23456789'; let s = ''; for (let i = 0; i < 5; i++) s += a[Math.floor(Math.random() * a.length)]; return s; };
+const inArtifact = typeof window.claude === 'object' || /claudeusercontent\.com$|(^|\.)claude\.ai$/.test(location.hostname);
+const isFile = location.protocol === 'file:';
+const fmtDate = d => d ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+const scriptCache = {};
+function loadScript(src) {
+  return scriptCache[src] ||= new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = () => res();
+    s.onerror = () => { delete scriptCache[src]; rej(new Error('Could not load ' + src)); };
+    document.head.appendChild(s);
+  });
+}
+function clientId() {
+  const q = new URLSearchParams(location.search).get('gcid');
+  if (q) store.set('clientId', q);
+  return q || store.get('clientId', '') || CONFIG.GOOGLE_CLIENT_ID || '';
+}
+function show(el, on) { el.hidden = !on; }
+
+/* ================= sound ================= */
+const Sound = {
+  ctx: null, on: store.get('sound', true),
+  wake() { if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch {} } this.ctx?.resume?.(); },
+  tone(f, dur, type = 'sine', vol = .15, when = 0) {
+    if (!this.on || !this.ctx) return;
+    const t = this.ctx.currentTime + when, o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(f, t);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + .012); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(this.ctx.destination); o.start(t); o.stop(t + dur + .03);
+  },
+  shutter() { this.tone(2200, .04, 'square', .07); this.tone(700, .07, 'square', .06, .045); },
+  right() { this.tone(660, .16, 'triangle', .2); this.tone(990, .3, 'triangle', .2, .13); },
+  wrong() { this.tone(190, .35, 'sawtooth', .09); },
+  go() { this.tone(520, .08, 'sine', .1); },
+};
+
+/* ================= photos: decode, shrink, EXIF date ================= */
+// Takes a Blob (own photos) or a URL string (quiz sets). Only blob URLs need revoking later.
+function loadImage(src) {
+  return new Promise((res, rej) => {
+    const isBlob = typeof src !== 'string';
+    const url = isBlob ? URL.createObjectURL(src) : src, img = new Image();
+    img.onload = () => res({ img, url: isBlob ? url : null });
+    img.onerror = () => { if (isBlob) URL.revokeObjectURL(url); rej(new Error('decode')); };
+    img.src = url;
+  });
+}
+async function shrink(blob, max = 1920) {
+  const { img, url } = await loadImage(blob);
+  try {
+    const w = img.naturalWidth, h = img.naturalHeight, s = Math.min(1, max / Math.max(w, h));
+    if (s === 1 && blob.type === 'image/jpeg' && blob.size < 1.6e6) return blob;
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * s)); c.height = Math.max(1, Math.round(h * s));
+    const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, c.width, c.height);
+    return await new Promise(r => c.toBlob(b => r(b || blob), 'image/jpeg', .86));
+  } finally { URL.revokeObjectURL(url); }
+}
+async function exifDate(file) {
+  try {
+    if (!/jpe?g/i.test(file.type || '') && !/\.jpe?g$/i.test(file.name || '')) return null;
+    const v = new DataView(await file.slice(0, 196608).arrayBuffer());
+    if (v.getUint16(0) !== 0xFFD8) return null;
+    let off = 2;
+    while (off + 10 < v.byteLength) {
+      const marker = v.getUint16(off), len = v.getUint16(off + 2);
+      if (marker === 0xFFE1 && v.getUint32(off + 4) === 0x45786966) return tiffDate(v, off + 10);
+      if ((marker & 0xFF00) !== 0xFF00 || marker === 0xFFDA) break;
+      off += 2 + len;
+    }
+  } catch {}
+  return null;
+}
+function tiffDate(v, t) {
+  const le = v.getUint16(t) === 0x4949;
+  const u16 = o => v.getUint16(t + o, le), u32 = o => v.getUint32(t + o, le);
+  const ifd = o => { const n = u16(o), tags = {}; for (let i = 0; i < n; i++) { const e = o + 2 + i * 12; tags[u16(e)] = { count: u32(e + 4), at: e + 8 }; } return tags; };
+  const str = tag => { if (!tag) return null; const o = tag.count > 4 ? u32(tag.at) : tag.at; let s = ''; for (let i = 0; i < tag.count - 1; i++) s += String.fromCharCode(v.getUint8(t + o + i)); return s; };
+  const ifd0 = ifd(u32(4));
+  let s = null;
+  if (ifd0[0x8769]) { const ex = ifd(u32(ifd0[0x8769].at)); s = str(ex[0x9003]) || str(ex[0x9004]); }
+  s = s || str(ifd0[0x0132]);
+  const m = s && s.match(/^(\d{4}):(\d{2}):(\d{2})/);
+  if (!m || m[1] === '0000') return null;
+  return new Date(+m[1], +m[2] - 1, +m[3]);
+}
+async function prepFile(file) {
+  const date = await exifDate(file);
+  const blob = await shrink(file);
+  return { blob, date };
+}
+
+/* Demo pictures: flags, drawn on the fly. Great for trying the game, and for practising countries. */
+// Each flag is drawn in its own w×h grid: [name, w, h, draw(ctx, w, h)].
+const FLAGS = [
+  ['Norway', 22, 16, (x, w, h) => nordic(x, w, h, 6, 4, '#ba0c2f', '#fff', '#00205b')],
+  ['Denmark', 37, 28, (x, w, h) => nordic(x, w, h, 12, 4, '#c8102e', '#fff')],
+  ['Finland', 18, 11, (x, w, h) => nordic(x, w, h, 5, 3, '#fff', '#002f6c')],
+  ['Iceland', 25, 18, (x, w, h) => nordic(x, w, h, 7, 4, '#02529c', '#fff', '#dc1e35')],
+  ['France', 3, 2, (x, w, h) => bands(x, w, h, 'v', ['#002654', '#fff', '#ce1126'])],
+  ['Italy', 3, 2, (x, w, h) => bands(x, w, h, 'v', ['#008c45', '#f4f5f0', '#cd212a'])],
+  ['Ireland', 2, 1, (x, w, h) => bands(x, w, h, 'v', ['#169b62', '#fff', '#ff883e'])],
+  ['Germany', 5, 3, (x, w, h) => bands(x, w, h, 'h', ['#000', '#dd0000', '#ffce00'])],
+  ['the Netherlands', 3, 2, (x, w, h) => bands(x, w, h, 'h', ['#ae1c28', '#fff', '#21468b'])],
+  ['Japan', 3, 2, (x, w, h) => { x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.fillStyle = '#bc002d'; x.beginPath(); x.arc(w / 2, h / 2, h * .3, 0, 7); x.fill(); }],
+];
+function nordic(x, w, h, at, bar, bg, cross, inner) {
+  x.fillStyle = bg; x.fillRect(0, 0, w, h);
+  const y = (h - bar) / 2;
+  x.fillStyle = cross; x.fillRect(at, 0, bar, h); x.fillRect(0, y, w, bar);
+  if (inner) { x.fillStyle = inner; x.fillRect(at + bar / 4, 0, bar / 2, h); x.fillRect(0, y + bar / 4, w, bar / 2); }
+}
+function bands(x, w, h, dir, cols) {
+  const n = cols.length;
+  cols.forEach((c, i) => { x.fillStyle = c; if (dir === 'v') x.fillRect(i * w / n, 0, w / n + .01, h); else x.fillRect(0, i * h / n, w, h / n + .01); });
+}
+async function makeFlags() {
+  const out = [];
+  for (const [name, w, h, draw] of FLAGS) {
+    const c = document.createElement('canvas');
+    c.width = 1500; c.height = Math.round(1500 * h / w);
+    const x = c.getContext('2d'); x.scale(c.width / w, c.height / h); draw(x, w, h);
+    const blob = await new Promise(r => c.toBlob(r, 'image/png'));
+    if (blob) out.push({ blob, date: null, subject: name, label: name.replace(/^the /, 'The '), question: 'Which country\u2019s flag is it?' });
+  }
+  return out;
+}
+
+/* ================= quiz sets from the internet =================
+   Animals and birds: a random top-rated, openly licensed photo from iNaturalist for each pick.
+   Landmarks: the lead photo of the Wikipedia article. Add your own rows to any list. */
+const SET_SIZE = 12;
+const QUIZ_SETS = {
+  animals: {
+    label: 'Animals', question: 'Which animal is it?', source: 'inat',
+    // [English, Swedish, scientific name]
+    items: [
+      ['Moose', 'älg', 'Alces alces'], ['Reindeer', 'ren', 'Rangifer tarandus'], ['Red fox', 'räv', 'Vulpes vulpes'],
+      ['Hedgehog', 'igelkott', 'Erinaceus europaeus'], ['Lynx', 'lodjur', 'Lynx lynx'], ['Wolf', 'varg', 'Canis lupus'],
+      ['Brown bear', 'björn', 'Ursus arctos'], ['Badger', 'grävling', 'Meles meles'], ['Red squirrel', 'ekorre', 'Sciurus vulgaris'],
+      ['Roe deer', 'rådjur', 'Capreolus capreolus'], ['Wild boar', 'vildsvin', 'Sus scrofa'], ['Mountain hare', 'skogshare', 'Lepus timidus'],
+      ['Otter', 'utter', 'Lutra lutra'], ['Wolverine', 'järv', 'Gulo gulo'], ['Arctic fox', 'fjällräv', 'Vulpes lagopus'],
+      ['Grey seal', 'gråsäl', 'Halichoerus grypus'], ['Common frog', 'groda', 'Rana temporaria'], ['Adder', 'huggorm', 'Vipera berus'],
+      ['Beaver', 'bäver', 'Castor fiber'], ['Ladybird', 'nyckelpiga', 'Coccinella septempunctata'],
+      ['Lion', 'lejon', 'Panthera leo'], ['Tiger', 'tiger', 'Panthera tigris'], ['Leopard', 'leopard', 'Panthera pardus'],
+      ['Cheetah', 'gepard', 'Acinonyx jubatus'], ['African elephant', 'elefant', 'Loxodonta africana'], ['Giraffe', 'giraff', 'Giraffa'],
+      ['Zebra', 'zebra', 'Equus quagga'], ['Hippopotamus', 'flodhäst', 'Hippopotamus amphibius'], ['Rhinoceros', 'noshörning', 'Ceratotherium simum'],
+      ['Gorilla', 'gorilla', 'Gorilla'], ['Chimpanzee', 'schimpans', 'Pan troglodytes'], ['Orangutan', 'orangutang', 'Pongo'],
+      ['Giant panda', 'panda', 'Ailuropoda melanoleuca'], ['Red panda', 'röd panda', 'Ailurus fulgens'], ['Polar bear', 'isbjörn', 'Ursus maritimus'],
+      ['Kangaroo', 'känguru', 'Osphranter rufus'], ['Koala', 'koala', 'Phascolarctos cinereus'], ['Meerkat', 'surikat', 'Suricata suricatta'],
+      ['Sloth', 'sengångare', 'Bradypus'], ['Camel', 'kamel', 'Camelus dromedarius'], ['Bison', 'bison', 'Bison bison'],
+      ['Raccoon', 'tvättbjörn', 'Procyon lotor'], ['Crocodile', 'krokodil', 'Crocodylus niloticus'], ['Sea turtle', 'havssköldpadda', 'Chelonia mydas'],
+      ['Komodo dragon', 'komodovaran', 'Varanus komodoensis'], ['Octopus', 'bläckfisk', 'Octopus vulgaris'], ['Dolphin', 'delfin', 'Tursiops truncatus'],
+      ['Humpback whale', 'knölval', 'Megaptera novaeangliae'],
+    ],
+  },
+  birds: {
+    label: 'Birds', question: 'Which bird is it?', source: 'inat',
+    items: [
+      ['Emperor penguin', 'kejsarpingvin', 'Aptenodytes forsteri'], ['Flamingo', 'flamingo', 'Phoenicopterus roseus'],
+      ['Bald eagle', 'vithövdad havsörn', 'Haliaeetus leucocephalus'], ['White-tailed eagle', 'havsörn', 'Haliaeetus albicilla'],
+      ['Snowy owl', 'fjälluggla', 'Bubo scandiacus'], ['Eagle-owl', 'berguv', 'Bubo bubo'], ['Barn owl', 'tornuggla', 'Tyto alba'],
+      ['Puffin', 'lunnefågel', 'Fratercula arctica'], ['Ostrich', 'struts', 'Struthio camelus'], ['Peacock', 'påfågel', 'Pavo cristatus'],
+      ['Scarlet macaw', 'ara', 'Ara macao'], ['Toucan', 'tukan', 'Ramphastos toco'], ['Mute swan', 'knölsvan', 'Cygnus olor'],
+      ['Mallard', 'gräsand', 'Anas platyrhynchos'], ['Robin', 'rödhake', 'Erithacus rubecula'], ['Blue tit', 'blåmes', 'Cyanistes caeruleus'],
+      ['Great tit', 'talgoxe', 'Parus major'], ['Magpie', 'skata', 'Pica pica'], ['Bullfinch', 'domherre', 'Pyrrhula pyrrhula'],
+      ['Kingfisher', 'kungsfiskare', 'Alcedo atthis'], ['Barn swallow', 'ladusvala', 'Hirundo rustica'], ['Common crane', 'trana', 'Grus grus'],
+      ['Capercaillie', 'tjäder', 'Tetrao urogallus'], ['Great spotted woodpecker', 'större hackspett', 'Dendrocopos major'],
+      ['Hummingbird', 'kolibri', 'Archilochus colubris'], ['Kookaburra', 'kookaburra', 'Dacelo novaeguineae'],
+      ['White stork', 'vit stork', 'Ciconia ciconia'], ['Hooded crow', 'kråka', 'Corvus cornix'], ['Herring gull', 'gråtrut', 'Larus argentatus'],
+    ],
+  },
+  landmarks: {
+    label: 'Landmarks', question: 'Which country is it in? Bonus glory for naming the place.', source: 'wiki',
+    // [Wikipedia article title, country]
+    items: [
+      ['Eiffel Tower', 'France'], ['Mont-Saint-Michel', 'France'], ['Colosseum', 'Italy'], ['Leaning Tower of Pisa', 'Italy'],
+      ['Big Ben', 'United Kingdom'], ['Tower Bridge', 'United Kingdom'], ['Stonehenge', 'United Kingdom'],
+      ['Statue of Liberty', 'USA'], ['Golden Gate Bridge', 'USA'], ['Mount Rushmore', 'USA'], ['Niagara Falls', 'Canada and USA'],
+      ['Sydney Opera House', 'Australia'], ['Uluru', 'Australia'], ['Taj Mahal', 'India'], ['Great Wall of China', 'China'],
+      ['Machu Picchu', 'Peru'], ['Christ the Redeemer (statue)', 'Brazil'], ['Great Pyramid of Giza', 'Egypt'], ['Petra', 'Jordan'],
+      ['Sagrada Família', 'Spain'], ['Alhambra', 'Spain'], ['Neuschwanstein Castle', 'Germany'], ['Brandenburg Gate', 'Germany'],
+      ['Acropolis of Athens', 'Greece'], ['Mount Fuji', 'Japan'], ['Burj Khalifa', 'United Arab Emirates'], ['Angkor Wat', 'Cambodia'],
+      ["Saint Basil's Cathedral", 'Russia'], ['Matterhorn', 'Switzerland and Italy'], ['Moai', 'Chile (Easter Island)'],
+      ['Atomium', 'Belgium'], ['The Little Mermaid (statue)', 'Denmark'], ['Geirangerfjord', 'Norway'], ['Hallgrímskirkja', 'Iceland'],
+      ['Helsinki Cathedral', 'Finland'], ['Table Mountain', 'South Africa'], ['Chichen Itza', 'Mexico'], ['Marina Bay Sands', 'Singapore'],
+    ],
+  },
+};
+const INAT_LICENSES = 'cc0,cc-by,cc-by-sa,cc-by-nd,cc-by-nc,cc-by-nc-sa,cc-by-nc-nd';
+async function inatPhoto([en, sv, sci]) {
+  const q = new URLSearchParams({ taxon_name: sci, quality_grade: 'research', photos: 'true', order_by: 'votes', per_page: '30', photo_license: INAT_LICENSES });
+  const r = await fetch('https://api.inaturalist.org/v1/observations?' + q);
+  if (!r.ok) throw new Error('iNaturalist answered ' + r.status);
+  const obs = ((await r.json()).results || []).filter(o => o.photos?.[0]?.url);
+  if (!obs.length) throw new Error('No photos for ' + en);
+  const ph = obs[Math.floor(Math.random() * obs.length)].photos[0];
+  return {
+    url: ph.url.replace(/\/square\.(\w+)/, '/original.$1'), subject: en,
+    label: sv && sv.toLowerCase() !== en.toLowerCase() ? `${en} (${sv})` : en,
+    credit: (ph.attribution ? ph.attribution + ', ' : '') + 'via iNaturalist',
+  };
+}
+async function wikiPhotos(items) {
+  const q = new URLSearchParams({ action: 'query', format: 'json', formatversion: '2', origin: '*', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '1920', pilimit: '50', redirects: '1', titles: items.map(i => i[0]).join('|') });
+  const r = await fetch('https://en.wikipedia.org/w/api.php?' + q);
+  if (!r.ok) throw new Error('Wikipedia answered ' + r.status);
+  const qy = (await r.json()).query || {};
+  const follow = t => { for (const n of qy.normalized || []) if (n.from === t) t = n.to; for (const x of qy.redirects || []) if (x.from === t) t = x.to; return t; };
+  const pages = new Map((qy.pages || []).map(pg => [pg.title, pg]));
+  return items.map(([title, country]) => {
+    const src = pages.get(follow(title))?.thumbnail?.source;
+    return src ? { url: src, subject: title, label: `${title.replace(/ \(statue\)$/, '')}, ${country}`, credit: 'Photo from Wikipedia' } : null;
+  }).filter(Boolean);
+}
+// Picks subjects not already in the pool and returns photos that are checked to load.
+async function fetchQuizSet(key, avoid, onProgress) {
+  const set = QUIZ_SETS[key];
+  const fresh = set.items.filter(it => !avoid.has(it[0]));
+  const picks = sample(fresh.length >= SET_SIZE ? fresh : set.items, SET_SIZE);
+  let found = [];
+  if (set.source === 'wiki') { onProgress?.(0, picks.length); found = await wikiPhotos(picks); }
+  else {
+    let n = 0;
+    await eachLimited(picks, 3, async it => {
+      try { found.push(await inatPhoto(it)); } catch {}
+      onProgress?.(++n, picks.length);
+    });
+  }
+  const ok = [];
+  await eachLimited(found, 4, async f => { try { await loadImage(f.url); ok.push({ ...f, question: set.question }); } catch {} });
+  return ok;
+}
+
+/* ================= Google Photos (Picker API) ================= */
+const GP = {
+  cid: '', client: null, token: '', exp: 0, state: 'off', // off | loading | ready | failed
+  init(cid) {
+    if (!cid || this.cid === cid || inArtifact || isFile) return;
+    this.cid = cid; this.state = 'loading'; GP.onChange?.();
+    loadScript(LIBS.gis).then(() => {
+      this.client = google.accounts.oauth2.initTokenClient({ client_id: cid, scope: PICKER_SCOPE, callback: r => this.onToken?.(r), error_callback: e => this.onError?.(e) });
+      this.state = 'ready'; GP.onChange?.();
+    }).catch(() => { this.state = 'failed'; GP.onChange?.(); });
+  },
+  // Must be called straight from a click so the sign-in popup is allowed.
+  signIn() {
+    return new Promise((res, rej) => {
+      if (this.token && Date.now() < this.exp - 120000) return res(this.token);
+      this.onToken = r => {
+        if (r.error) return rej(new Error(r.error === 'access_denied' ? 'Google access was declined.' : 'Google sign-in failed: ' + r.error));
+        this.token = r.access_token; this.exp = Date.now() + (Number(r.expires_in) || 3600) * 1000; res(this.token);
+      };
+      this.onError = e => rej(new Error(e?.type === 'popup_closed' ? 'The Google sign-in window was closed.' : 'Google sign-in could not open. Allow pop-ups for this page.'));
+      this.client.requestAccessToken();
+    });
+  },
+  async api(path, opts = {}) {
+    const headers = { Authorization: 'Bearer ' + this.token };
+    if (opts.body) headers['Content-Type'] = 'application/json';
+    const r = await fetch(PICKER_API + path, { ...opts, headers });
+    if (!r.ok) {
+      let msg = ''; try { msg = (await r.json()).error?.message || ''; } catch {}
+      throw new Error(`Google Photos answered ${r.status}${msg ? ': ' + msg : ''}`);
+    }
+    return r.status === 204 ? null : r.json().catch(() => null);
+  },
+  createSession() { return this.api('sessions', { method: 'POST', body: '{}' }); },
+  async waitForPick(session, signal) {
+    const every = Math.max(2, parseFloat(session.pollingConfig?.pollInterval) || 4) * 1000;
+    const until = Date.now() + (parseFloat(session.pollingConfig?.timeoutIn) || 1800) * 1000;
+    let s = session;
+    while (!s.mediaItemsSet) {
+      if (signal?.aborted) throw new DOMException('cancelled', 'AbortError');
+      if (Date.now() > until) throw new Error('The Google Photos picker timed out. Try again.');
+      await sleep(every);
+      if (signal?.aborted) throw new DOMException('cancelled', 'AbortError');
+      s = await this.api('sessions/' + encodeURIComponent(session.id));
+    }
+    return s;
+  },
+  async listPhotos(sessionId) {
+    const out = []; let page = '';
+    do {
+      const r = await this.api(`mediaItems?sessionId=${encodeURIComponent(sessionId)}&pageSize=100${page ? '&pageToken=' + encodeURIComponent(page) : ''}`);
+      for (const m of r?.mediaItems || []) {
+        const mime = m.mediaFile?.mimeType || '';
+        if ((m.type ? m.type === 'PHOTO' : mime.startsWith('image/')) && m.mediaFile?.baseUrl) out.push(m);
+      }
+      page = r?.nextPageToken || '';
+    } while (page);
+    return out;
+  },
+  async download(m) {
+    const r = await fetch(m.mediaFile.baseUrl + '=w1920-h1920', { headers: { Authorization: 'Bearer ' + this.token } });
+    if (!r.ok) throw new Error('Photo download failed (' + r.status + ')');
+    return { blob: await r.blob(), date: m.createTime ? new Date(m.createTime) : null };
+  },
+  endSession(id) { return this.api('sessions/' + encodeURIComponent(id), { method: 'DELETE' }).catch(() => {}); },
+};
+// Runs fn over items, a few at a time.
+async function eachLimited(items, limit, fn) {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => { while (i < items.length) { const k = i++; await fn(items[k], k); } });
+  await Promise.all(workers);
+}
+function sample(arr, n) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, n); }
+
+function qrSvg(text) {
+  const q = qrcode(0, 'M'); q.addData(text); q.make();
+  return q.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+}
+
+/* ================= the lens: blur → sharp renderer ================= */
+class Lens {
+  constructor(cv, bg) {
+    this.cv = cv; this.ctx = cv.getContext('2d'); this.bg = bg; this.bgx = bg.getContext('2d');
+    this.img = null; this.mips = []; this.A = document.createElement('canvas'); this.B = document.createElement('canvas');
+    this.filterOK = (() => { try { const x = document.createElement('canvas').getContext('2d'); if (!('filter' in x)) return false; x.filter = 'blur(2px)'; return x.filter === 'blur(2px)'; } catch { return false; } })();
+    this.last = -1;
+  }
+  setImage(img) { this.img = img; this.layout(); }
+  layout() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const W = Math.max(2, Math.round(this.cv.clientWidth * dpr)), H = Math.max(2, Math.round(this.cv.clientHeight * dpr));
+    this.cv.width = W; this.cv.height = H; this.W = W; this.H = H; this.last = -1;
+    if (!this.img) return;
+    const iw = this.img.naturalWidth || this.img.width, ih = this.img.naturalHeight || this.img.height, s = Math.min(W / iw, H / ih);
+    const w = Math.max(2, Math.round(iw * s)), h = Math.max(2, Math.round(ih * s));
+    this.rect = { x: Math.round((W - w) / 2), y: Math.round((H - h) / 2), w, h };
+    // Halve the source until it is close to the screen size, then build a mip chain for cheap blur levels.
+    let src = this.img, sw = iw, sh = ih;
+    while (sw / 2 >= w && sh / 2 >= h) {
+      const c = document.createElement('canvas'); c.width = Math.round(sw / 2); c.height = Math.round(sh / 2);
+      const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height);
+      src = c; sw = c.width; sh = c.height;
+    }
+    const base = document.createElement('canvas'); base.width = w; base.height = h;
+    const bx = base.getContext('2d'); bx.imageSmoothingQuality = 'high'; bx.drawImage(src, 0, 0, w, h);
+    this.mips = [base];
+    let cur = base;
+    while (cur.width > 24 && cur.height > 24) {
+      const n = document.createElement('canvas'); n.width = Math.max(1, cur.width >> 1); n.height = Math.max(1, cur.height >> 1);
+      const nx = n.getContext('2d'); nx.imageSmoothingQuality = 'high'; nx.drawImage(cur, 0, 0, n.width, n.height);
+      this.mips.push(n); cur = n;
+    }
+    const t = this.mips[this.mips.length - 1], bw = 64, bh = Math.max(16, Math.round(64 * H / W));
+    this.bg.width = bw; this.bg.height = bh;
+    const cs = Math.max(bw / t.width, bh / t.height);
+    this.bgx.drawImage(t, (bw - t.width * cs) / 2, (bh - t.height * cs) / 2, t.width * cs, t.height * cs);
+  }
+  blurFor(sharp) {
+    // Logarithmic: each 10% of sharpness removes the same share of blur, so difficulty drops evenly.
+    // The 1.25 power keeps the opening stretch hard, so early guesses are earned.
+    const h = this.rect.h, max = h * .12, min = Math.max(.6, h * .0008);
+    return sharp >= 1 ? 0 : max * Math.pow(min / max, Math.pow(Math.max(0, sharp), 1.25));
+  }
+  draw(sharp) {
+    if (!this.img || !this.rect) return;
+    const b = this.blurFor(sharp);
+    if (this.last >= 0 && Math.abs(b - this.last) < .03) return;
+    this.last = b;
+    const { x, y, w, h } = this.rect, ctx = this.ctx;
+    ctx.clearRect(0, 0, this.W, this.H);
+    if (b < .35) { ctx.drawImage(this.mips[0], x, y); return; }
+    const s = this.filterOK ? Math.min(1, 3 / b) : Math.min(1, 1.6 / b);
+    const sw = Math.max(2, Math.round(w * s)), sh = Math.max(2, Math.round(h * s));
+    let src = this.mips[0];
+    for (const m of this.mips) if (m.width >= sw && m.height >= sh) src = m;
+    const rb = b * s, pad = this.filterOK ? Math.ceil(rb * 2) + 2 : 0;
+    const A = this.A, ax = A.getContext('2d');
+    A.width = sw + pad * 2; A.height = sh + pad * 2;
+    ax.imageSmoothingQuality = 'high';
+    if (pad) ax.drawImage(src, 0, 0, A.width, A.height); // stretched copy fills the edges so the blur doesn't fade to black
+    ax.drawImage(src, pad, pad, sw, sh);
+    let out = A;
+    if (this.filterOK) {
+      const B = this.B, bx = B.getContext('2d');
+      B.width = A.width; B.height = A.height; bx.filter = `blur(${rb.toFixed(2)}px)`; bx.drawImage(A, 0, 0); out = B;
+    }
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(out, pad, pad, sw, sh, x, y, w, h);
+  }
+}
+
+/* ================= TV-remote friendly focus movement ================= */
+function activeLayer() {
+  const dlg = $('.dialog:not([hidden])'); if (dlg) return dlg;
+  return $$('.screen').find(s => !s.hidden) || document.body;
+}
+function focusables(root) {
+  return $$('button:not([disabled]), input[type=text]:not([disabled]), a.btn[href], summary', root)
+    .filter(el => el.getClientRects().length && !el.closest('[hidden]') && getComputedStyle(el).visibility !== 'hidden');
+}
+function moveFocus(dir) {
+  const items = focusables(activeLayer()), cur = document.activeElement;
+  if (!items.includes(cur)) { items[0]?.focus(); return; }
+  const a = cur.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+  let best = null, bestScore = Infinity;
+  for (const el of items) {
+    if (el === cur) continue;
+    const b = el.getBoundingClientRect(), bx = b.left + b.width / 2, by = b.top + b.height / 2, dx = bx - ax, dy = by - ay;
+    let main, cross;
+    if (dir === 'left') { if (b.right > a.left + 4) continue; main = -dx; cross = Math.abs(dy); }
+    else if (dir === 'right') { if (b.left < a.right - 4) continue; main = dx; cross = Math.abs(dy); }
+    else if (dir === 'up') { if (b.bottom > a.top + 4) continue; main = -dy; cross = Math.abs(dx); }
+    else { if (b.top < a.bottom - 4) continue; main = dy; cross = Math.abs(dx); }
+    const score = main + cross * 2.2;
+    if (score < bestScore) { bestScore = score; best = el; }
+  }
+  best?.focus();
+}
+const BACK_KEYS = new Set([27, 8, 461, 10009]);
+function handleArrows(e) {
+  const dirs = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
+  const dir = dirs[e.key]; if (!dir) return false;
+  const t = e.target;
+  if (t.matches?.('input[type=text]') && (dir === 'left' || dir === 'right')) {
+    if (dir === 'left' && t.selectionStart > 0) return false;
+    if (dir === 'right' && t.selectionEnd < t.value.length) return false;
+  }
+  e.preventDefault(); moveFocus(dir); return true;
+}
+
+if (/^#join-/.test(location.hash)) startRemote(); else startHost();
+
+/* ======================================================================
+   HOST (the TV)
+   ====================================================================== */
+function startHost() {
+  const G = {
+    screen: 'setup',
+    players: store.get('players', null) || [{ id: uid(), name: '' }, { id: uid(), name: '' }],
+    settings: Object.assign({ duration: 30, rounds: 10 }, store.get('settings', {})),
+    photos: [], order: [], idx: 0, r: null,
+  };
+  G.players = G.players.slice(0, 4).map(p => ({ id: p.id || uid(), name: String(p.name || ''), score: 0 }));
+  const nameOf = p => (p.name || '').trim() || 'Player ' + (G.players.indexOf(p) + 1);
+  const byId = id => G.players.find(p => p.id === id);
+  const colorOf = p => COLORS[G.players.indexOf(p)] || COLORS[0];
+  const lens = new Lens($('#photo'), $('#bg'));
+  let conns = new Set();
+
+  /* ----- screens ----- */
+  function go(screen) {
+    G.screen = screen;
+    for (const id of ['setup', 'round', 'final']) show($('#scr-' + id), id === screen);
+    if (screen === 'round') { requestAnimationFrame(() => { lens.layout(); }); startLoop(); keepAwake(); } else stopLoop();
+    sync();
+  }
+
+  /* ----- players ----- */
+  function savePlayers() { store.set('players', G.players.map(p => ({ id: p.id, name: p.name }))); }
+  function renderPlayers() {
+    const ol = $('#playerList'); ol.textContent = '';
+    G.players.forEach((p, i) => {
+      const li = document.createElement('li'); li.style.setProperty('--pc', COLORS[i]);
+      li.innerHTML = `<span class="swatch" aria-hidden="true"></span><input type="text" maxlength="16" autocomplete="off" spellcheck="false"><button class="icon" type="button">×</button>`;
+      const inp = li.querySelector('input'), rm = li.querySelector('button');
+      inp.id = 'pn-' + p.id; inp.value = p.name; inp.placeholder = 'Player ' + (i + 1); inp.setAttribute('aria-label', 'Player ' + (i + 1) + ' name');
+      inp.addEventListener('input', () => { p.name = inp.value; savePlayers(); syncSoon(); });
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); moveFocus('down'); } });
+      rm.setAttribute('aria-label', 'Remove ' + nameOf(p)); rm.disabled = G.players.length < 2;
+      rm.addEventListener('click', () => { G.players = G.players.filter(x => x !== p); savePlayers(); renderPlayers(); sync(); $('#addPlayer').focus(); });
+      ol.appendChild(li);
+    });
+    $('#addPlayer').disabled = G.players.length >= 4;
+  }
+  $('#addPlayer').addEventListener('click', () => {
+    if (G.players.length >= 4) return;
+    G.players.push({ id: uid(), name: '', score: 0 }); savePlayers(); renderPlayers(); sync();
+    $('#playerList li:last-child input')?.focus();
+  });
+  function setPlayersFrom(list) {
+    if (!Array.isArray(list) || !list.length || G.screen !== 'setup') return;
+    const old = new Map(G.players.map(p => [p.id, p]));
+    G.players = list.slice(0, 4).map(x => ({ id: old.has(x?.id) ? x.id : uid(), name: String(x?.name || '').slice(0, 16), score: 0 }));
+    savePlayers(); renderPlayers(); sync();
+  }
+
+  /* ----- settings ----- */
+  function seg(el, options, get, set) {
+    el.textContent = '';
+    for (const [val, label] of options) {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.id = el.id + '-' + val;
+      b.setAttribute('aria-pressed', String(get() === val));
+      b.addEventListener('click', () => { set(val); $$('button', el).forEach(x => x.setAttribute('aria-pressed', String(x === b))); updateStart(); });
+      el.appendChild(b);
+    }
+  }
+  const saveSettings = () => store.set('settings', G.settings);
+  seg($('#segDuration'), [[20, '20 s'], [30, '30 s'], [45, '45 s'], [60, '60 s']], () => G.settings.duration, v => { G.settings.duration = v; saveSettings(); });
+  seg($('#segRounds'), [[10, '10'], [15, '15'], [20, '20'], ['all', 'All']], () => G.settings.rounds, v => { G.settings.rounds = v; saveSettings(); });
+  seg($('#segSound'), [[true, 'On'], [false, 'Off']], () => Sound.on, v => { Sound.on = v; store.set('sound', v); if (v) { Sound.wake(); Sound.go(); } });
+
+  /* ----- photo pool ----- */
+  function addPhoto(p) {
+    if (G.photos.length >= MAX_PHOTOS || !(p?.blob || p?.url)) return false;
+    G.photos.push({
+      blob: p.blob || null, url: p.url || null, date: p.date ? new Date(p.date) : null,
+      label: p.label || '', subject: p.subject || '', question: p.question || '', credit: p.credit || '', used: 0,
+    });
+    return true;
+  }
+  let countTimer = 0;
+  function photosChanged() {
+    $('#photoCount').textContent = G.photos.length;
+    show($('#clearBtn'), G.photos.length > 0);
+    updateStart();
+    clearTimeout(countTimer); countTimer = setTimeout(sync, 150);
+  }
+  function setImportStatus(text, kind = '') { const el = $('#importStatus'); el.textContent = text; el.className = 'status' + (kind ? ' ' + kind : ''); syncSoon(); }
+  $('#fileBtn').addEventListener('click', () => $('#fileIn').click());
+  $('#fileIn').addEventListener('change', async e => {
+    const files = [...e.target.files]; e.target.value = '';
+    if (!files.length) return;
+    let ok = 0, bad = 0;
+    for (const [i, f] of files.entries()) {
+      setImportStatus(`Adding ${i + 1} of ${files.length}…`);
+      try { if (addPhoto(await prepFile(f))) ok++; } catch { bad++; }
+      photosChanged();
+    }
+    setImportStatus(`Added ${ok} photo${ok === 1 ? '' : 's'}${bad ? `. ${bad} could not be read (HEIC files need converting to JPEG).` : '.'}`, bad && !ok ? 'bad' : 'good');
+  });
+  /* ----- quiz sets ----- */
+  const online = !(inArtifact || isFile);
+  const SET_LIST = [...Object.entries(QUIZ_SETS).map(([k, v]) => ({ key: k, label: v.label, n: SET_SIZE, online: true })), { key: 'flags', label: 'Flags', n: FLAGS.length, online: false }];
+  let setBusy = false;
+  function renderSets() {
+    const row = $('#setRow'); row.textContent = '';
+    for (const it of SET_LIST) {
+      if (it.online && !online) continue;
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost set-btn'; b.id = 'set-' + it.key;
+      b.innerHTML = `<span></span><span class="n">+${it.n}</span>`; b.firstChild.textContent = it.label;
+      b.addEventListener('click', () => addSet(it.key)); row.appendChild(b);
+    }
+  }
+  async function addSet(key) {
+    if (setBusy || G.screen !== 'setup' || !SET_LIST.some(x => x.key === key && (online || !x.online))) return;
+    setBusy = true; $$('#setRow button').forEach(b => b.disabled = true);
+    try {
+      if (key === 'flags') {
+        let n = 0; for (const f of await makeFlags()) if (addPhoto(f)) n++;
+        photosChanged(); setImportStatus(`Added ${n} flags. Guess the country.`, 'good'); return;
+      }
+      const set = QUIZ_SETS[key], name = set.label.toLowerCase();
+      setImportStatus(`Finding ${name}…`);
+      const avoid = new Set(G.photos.map(p => p.subject).filter(Boolean));
+      const got = await fetchQuizSet(key, avoid, (n, total) => setImportStatus(`Finding ${name}… ${n} of ${total}`));
+      let n = 0; for (const f of got) if (addPhoto(f)) n++;
+      photosChanged();
+      setImportStatus(n ? `Added ${n} ${name}.` : `Couldn't fetch any ${name}. Check the internet connection and try again.`, n ? 'good' : 'bad');
+    } catch (err) {
+      setImportStatus('Could not fetch the quiz set. ' + (err.message || ''), 'bad');
+    } finally { setBusy = false; $$('#setRow button').forEach(b => b.disabled = false); }
+  }
+  $('#clearBtn').addEventListener('click', () => { G.photos = []; photosChanged(); setImportStatus('Photos cleared.'); $('#fileBtn').focus(); });
+
+  /* ----- Google Photos on the TV ----- */
+  let gpAbort = null;
+  function renderGoogle() {
+    const cid = clientId(), note = $('#gpNote'), btn = $('#gpBtn');
+    if (inArtifact || isFile) {
+      show(btn, false); show($('#gSetup'), false);
+      note.innerHTML = inArtifact
+        ? 'Google Photos, the animal, bird and landmark sets, and the phone remote work when the game runs from its own web address. Here you can add photos from this device or play the flags.'
+        : 'Open this page from a web address (not a local file) to use Google Photos and the phone remote.';
+      show(note, true); return;
+    }
+    show($('#gSetup'), true);
+    $('#gcidIn').value = cid;
+    if (!cid) { btn.disabled = false; note.innerHTML = 'Google Photos needs a one-time setup: a free OAuth client ID from Google Cloud. Paste it under <b>Google Photos setup</b> below, or in the file itself.'; show(note, true); return; }
+    btn.disabled = GP.state !== 'ready';
+    if (GP.state === 'failed') { note.textContent = 'Could not load Google sign-in. Check the internet connection and reload.'; show(note, true); }
+    else if (GP.state === 'loading') { note.textContent = 'Loading Google sign-in…'; show(note, true); }
+    else show(note, false);
+  }
+  GP.onChange = renderGoogle;
+  $('#gcidSave').addEventListener('click', () => {
+    const v = $('#gcidIn').value.trim();
+    store.set('clientId', v); GP.cid = ''; GP.client = null; GP.token = '';
+    if (v) GP.init(v); renderGoogle(); sync();
+    setImportStatus(v ? 'Client ID saved.' : 'Client ID removed.', 'good');
+  });
+  $('#gpBtn').addEventListener('click', async () => {
+    if (!clientId()) { $('#gSetup').open = true; $('#gcidIn').focus(); return; }
+    if (GP.state !== 'ready') return;
+    let session = null;
+    try {
+      await GP.signIn();
+      session = await GP.createSession();
+      const link = session.pickerUri;
+      $('#gpQr').innerHTML = qrReady ? qrSvg(link) : 'Code unavailable';
+      $('#gpLink').href = link + '/autoclose';
+      $('#gpStatus').textContent = 'Waiting for your selection…'; $('#gpStatus').className = 'status';
+      show($('#gpDialog'), true); $('#gpLink').focus();
+      gpAbort = new AbortController();
+      await GP.waitForPick(session, gpAbort.signal);
+      const items = await GP.listPhotos(session.id);
+      const room = MAX_PHOTOS - G.photos.length, take = sample(items, Math.max(0, room));
+      let done = 0, bad = 0;
+      $('#gpStatus').textContent = `Downloading 0 of ${take.length}…`;
+      await eachLimited(take, 4, async m => {
+        if (gpAbort?.signal.aborted) return;
+        try { addPhoto(await GP.download(m)); } catch { bad++; }
+        done++; $('#gpStatus').textContent = `Downloading ${done} of ${take.length}…`; photosChanged();
+      });
+      show($('#gpDialog'), false);
+      setImportStatus(`Added ${done - bad} photo${done - bad === 1 ? '' : 's'} from Google Photos${items.length > take.length ? ` (${take.length} of ${items.length} picked, the most the game holds)` : ''}.${bad ? ` ${bad} failed.` : ''}`, bad && done === bad ? 'bad' : 'good');
+      $('#startBtn').focus();
+    } catch (err) {
+      show($('#gpDialog'), false);
+      if (err.name !== 'AbortError') setImportStatus(err.message || 'Google Photos failed.', 'bad');
+      $('#gpBtn').focus();
+    } finally {
+      if (session) GP.endSession(session.id);
+      gpAbort = null;
+    }
+  });
+  $('#gpCancel').addEventListener('click', () => { gpAbort?.abort(); show($('#gpDialog'), false); $('#gpBtn').focus(); });
+
+  /* ----- start / fullscreen ----- */
+  function updateStart() {
+    const ready = G.photos.length > 0 && G.players.length > 0;
+    $('#startBtn').disabled = !ready;
+    $('#startHint').textContent = ready ? `${roundsFor()} photo${roundsFor() === 1 ? '' : 's'} this game` : 'Add some photos to start';
+  }
+  const roundsFor = () => G.settings.rounds === 'all' ? G.photos.length : Math.min(G.settings.rounds, G.photos.length);
+  $('#startBtn').addEventListener('click', () => { Sound.wake(); startGame(); });
+  $('#fsBtn').addEventListener('click', () => { const d = document.documentElement; (document.fullscreenElement ? document.exitFullscreen() : d.requestFullscreen?.())?.catch?.(() => {}); });
+
+  /* ----- game flow ----- */
+  function startGame() {
+    if (!G.photos.length) return;
+    G.players.forEach(p => p.score = 0);
+    const n = roundsFor();
+    G.order = G.photos.map((p, i) => ({ i, k: p.used + Math.random() })).sort((a, b) => a.k - b.k).slice(0, n).map(o => o.i);
+    G.idx = 0;
+    go('round'); renderScores(); startRound();
+  }
+  async function startRound() {
+    const photo = G.photos[G.order[G.idx]];
+    G.r = { phase: 'loading', sharp: 0, base: 0, runStart: 0, locked: new Set(), guesser: null, result: null, anim: null, photo };
+    show($('#panel'), false); show($('#stopBtn'), false); $('#scr-round').classList.remove('locked', 'revealing');
+    let loaded;
+    try { loaded = await loadImage(photo.blob || photo.url); }
+    catch {
+      G.order.splice(G.idx, 1);
+      if (G.idx >= G.order.length) return finish();
+      return startRound();
+    }
+    if (G.r?.photo !== photo) return;
+    if (lens.url) URL.revokeObjectURL(lens.url);
+    lens.url = loaded.url; lens.setImage(loaded.img); lens.draw(0);
+    photo.used++;
+    G.r.phase = 'ready';
+    $('#roundTag').textContent = `Photo ${G.idx + 1} / ${G.order.length}`;
+    const rd = $('#ready'); rd.innerHTML = `<div class="ready-card"><p class="eyebrow">Photo ${G.idx + 1} of ${G.order.length}</p><p>Get ready</p></div>`; show(rd, true);
+    renderScores(); updateHud(true); sync();
+    await sleep(1500);
+    if (G.r?.photo !== photo || G.r.phase !== 'ready') return;
+    show(rd, false); Sound.go(); run();
+  }
+  function run() {
+    const r = G.r; r.phase = 'running'; r.runStart = performance.now(); r.guesser = null;
+    $('#scr-round').classList.remove('locked');
+    show($('#panel'), false); show($('#stopBtn'), true); $('#stopBtn').focus({ preventScroll: true });
+    renderScores(); updateHud(true); sync();
+  }
+  const eligible = () => G.players.filter(p => !G.r.locked.has(p.id));
+  function stop(pickId) {
+    const r = G.r; if (!r || r.phase !== 'running') return;
+    r.base = r.sharp; r.phase = 'picking';
+    Sound.shutter(); $('#scr-round').classList.add('locked'); show($('#stopBtn'), false);
+    const el = eligible();
+    if (pickId && el.some(p => p.id === pickId)) return pick(pickId);
+    if (el.length === 1) return pick(el[0].id);
+    renderPanel(); updateHud(true); sync();
+  }
+  function pick(id) {
+    const r = G.r; if (!r || r.phase !== 'picking') return;
+    const p = byId(id); if (!p || r.locked.has(id)) return;
+    r.guesser = id; r.phase = 'judging';
+    renderPanel(); renderScores(); updateHud(true); sync();
+  }
+  function back() {
+    const r = G.r; if (!r || (r.phase !== 'judging' && r.phase !== 'picking')) return;
+    if (r.phase === 'judging' && eligible().length > 1) { r.guesser = null; r.phase = 'picking'; renderPanel(); renderScores(); sync(); return; }
+    run();
+  }
+  function judge(ok) {
+    const r = G.r; if (!r || r.phase !== 'judging') return;
+    const p = byId(r.guesser); if (!p) return;
+    if (ok) {
+      const pts = 100 - Math.round(r.base * 100);
+      p.score += pts; Sound.right();
+      reveal({ id: p.id, pts });
+    } else {
+      r.locked.add(p.id); Sound.wrong();
+      if (r.peeked) return reveal({ none: true, why: 'peeked' });
+      toast(`Wrong. ${nameOf(p)} sits out this photo.`);
+      if (!eligible().length) return reveal({ none: true, why: 'all-wrong' });
+      run();
+    }
+  }
+  function reveal(result) {
+    const r = G.r; r.phase = 'reveal'; r.result = result; r.guesser = result.id || null;
+    r.anim = { from: r.sharp, t0: performance.now(), dur: 900 };
+    if (result.none) $('#scr-round').classList.remove('locked');
+    $('#scr-round').classList.add('revealing');
+    show($('#stopBtn'), false); renderPanel(); renderScores(); updateHud(true); sync();
+  }
+  function next() {
+    if (G.r?.phase !== 'reveal') return;
+    G.idx++;
+    if (G.idx >= G.order.length) finish(); else startRound();
+  }
+  function finish() {
+    G.r = null;
+    const ranked = G.players.slice().sort((a, b) => b.score - a.score);
+    const top = ranked[0]?.score ?? 0, winners = ranked.filter(p => p.score === top);
+    $('#winnerLine').textContent = top === 0 ? 'Nobody scored' : winners.length > 1 ? 'Tie: ' + winners.map(nameOf).join(' & ') : nameOf(winners[0]) + ' wins';
+    const max = Math.max(1, top);
+    $('#standings').innerHTML = '';
+    ranked.forEach((p, i) => {
+      const li = document.createElement('li'); li.style.setProperty('--pc', colorOf(p));
+      li.innerHTML = `<span class="rank"></span><div class="bar"><span></span><b><i></i></b></div><span class="sc"></span>`;
+      li.querySelector('.rank').textContent = i === 0 || p.score !== ranked[i - 1].score ? i + 1 : '';
+      li.querySelector('.bar i').style.setProperty('--w', (p.score ? Math.max(3, p.score / max * 100) : 0) + '%');
+      li.querySelector('.bar span').textContent = nameOf(p);
+      li.querySelector('.sc').textContent = p.score;
+      $('#standings').appendChild(li);
+    });
+    const unused = G.photos.filter(p => !p.used).length;
+    $('#againHint').textContent = unused ? `${unused} photo${unused === 1 ? '' : 's'} not shown yet. Play again starts with those.` : 'Every photo has been shown at least once. Add more for fresh rounds.';
+    go('final'); $('#againBtn').focus();
+  }
+  $('#againBtn').addEventListener('click', startGame);
+  $('#setupBtn').addEventListener('click', toSetup);
+  $('#quitBtn').addEventListener('click', () => { if (G.screen === 'round') finish(); });
+  $('#stopBtn').addEventListener('click', () => stop());
+  function toSetup() { G.r = null; go('setup'); renderPlayers(); photosChanged(); $('#startBtn').disabled ? $('#fileBtn').focus() : $('#startBtn').focus(); }
+
+  /* ----- panel / HUD ----- */
+  function renderPanel() {
+    const r = G.r, panel = $('#panel');
+    if (!r || !['picking', 'judging', 'reveal'].includes(r.phase)) { show(panel, false); return; }
+    panel.innerHTML = ''; panel.style.removeProperty('--pc');
+    panel.className = 'panel' + (r.phase === 'reveal' ? ' compact' : '');
+    if (r.phase === 'picking') {
+      panel.innerHTML = `<div><h2>Who shouted first?</h2><p class="sub">Locked at ${Math.round(r.base * 100)}% sharp. A right answer scores ${100 - Math.round(r.base * 100)}.</p></div><div class="pick-row"></div><div class="row end"><button class="ghost" type="button" data-act="cancel">Keep going <span class="kbd">Back</span></button></div>`;
+      const row = $('.pick-row', panel);
+      eligible().forEach(p => {
+        const b = document.createElement('button'); b.type = 'button'; b.style.setProperty('--pc', colorOf(p));
+        b.innerHTML = `<span></span><span class="kbd">${G.players.indexOf(p) + 1}</span>`; b.firstChild.textContent = nameOf(p);
+        b.addEventListener('click', () => pick(p.id)); row.appendChild(b);
+      });
+      $('[data-act=cancel]', panel).addEventListener('click', back);
+    } else if (r.phase === 'judging') {
+      const p = byId(r.guesser), pts = 100 - Math.round(r.base * 100);
+      panel.style.setProperty('--pc', colorOf(p));
+      panel.innerHTML = `<div><h2></h2><p class="sub"></p>${r.peeked ? '<p class="answer"></p>' : ''}</div><div class="judge-row"><button class="btn-right" type="button" data-act="right">Correct · +${pts}</button><button class="btn-wrong" type="button" data-act="wrong">Wrong</button></div><div class="row end">${r.photo.subject && !r.peeked ? '<button class="ghost small" type="button" data-act="peek">Show answer</button>' : ''}<button class="ghost small" type="button" data-act="back">${eligible().length > 1 ? 'Pick someone else' : 'Keep going'}</button></div>`;
+      $('h2', panel).textContent = nameOf(p) + ', what’s your guess?';
+      $('.sub', panel).textContent = r.photo.question || DEFAULT_Q;
+      if (r.peeked) $('.answer', panel).textContent = 'Answer: ' + r.photo.label;
+      // Showing the answer on the TV spoils the photo, so a wrong guess then ends it instead of letting others continue.
+      $('[data-act=peek]', panel)?.addEventListener('click', () => { r.peeked = true; renderPanel(); });
+      $('[data-act=right]', panel).addEventListener('click', () => judge(true));
+      $('[data-act=wrong]', panel).addEventListener('click', () => judge(false));
+      $('[data-act=back]', panel).addEventListener('click', back);
+    } else {
+      const res = r.result, last = G.idx >= G.order.length - 1;
+      const p = res.id ? byId(res.id) : null;
+      if (p) panel.style.setProperty('--pc', colorOf(p));
+      panel.innerHTML = `<div class="stack"><div class="result"></div><p class="answer"></p><p class="meta"></p></div><button class="primary" type="button" data-act="next">${last ? 'See final scores' : 'Next photo'} <span class="kbd">OK</span></button>`;
+      const box = $('.result', panel);
+      if (p) {
+        box.innerHTML = `<span class="plus">+${res.pts}</span><span class="who"></span>`;
+        $('.who', box).textContent = nameOf(p);
+      } else {
+        box.innerHTML = `<span class="who">${{ 'all-wrong': 'Everyone guessed wrong.', peeked: 'Wrong guess. No points this time.' }[res.why] || 'Nobody got it in time.'}</span>`;
+      }
+      $('.answer', panel).textContent = r.photo.label; show($('.answer', panel), !!r.photo.label);
+      const meta = [r.photo.date ? 'Taken ' + fmtDate(r.photo.date) : '', r.photo.credit].filter(Boolean).join(' · ');
+      $('.meta', panel).textContent = meta; show($('.meta', panel), !!meta);
+      $('[data-act=next]', panel).addEventListener('click', next);
+    }
+    show(panel, true);
+    requestAnimationFrame(() => focusables(panel)[0]?.focus({ preventScroll: true }));
+  }
+  let hudPct = -1;
+  function updateHud(force) {
+    const r = G.r; if (!r) return;
+    const s = r.phase === 'running' || r.phase === 'reveal' ? r.sharp : r.base;
+    const pct = Math.round(s * 100);
+    if (!force && pct === hudPct) return;
+    hudPct = pct;
+    $('#scale').style.setProperty('--s', s.toFixed(4));
+    const locked = r.phase === 'picking' || r.phase === 'judging';
+    if (r.phase === 'reveal' && r.result?.id) { $('#worthN').textContent = '+' + r.result.pts; $('#worthL').textContent = 'scored'; }
+    else if (r.phase === 'reveal') { $('#worthN').textContent = pct + '%'; $('#worthL').textContent = 'sharp'; }
+    else { $('#worthN').textContent = 100 - pct; $('#worthL').textContent = 'points if right'; }
+    $('#afTag').textContent = locked ? `AF lock · ${pct}%` : 'AF lock';
+  }
+  function renderScores() {
+    const box = $('#scores'); box.textContent = '';
+    const top = Math.max(...G.players.map(p => p.score));
+    G.players.forEach((p, i) => {
+      const c = document.createElement('span');
+      c.className = 'chip' + (G.r?.locked.has(p.id) ? ' out' : '') + (G.r?.guesser === p.id ? ' guess' : '') + (top > 0 && p.score === top ? ' lead' : '');
+      c.style.setProperty('--pc', COLORS[i]);
+      c.innerHTML = '<span class="dot"></span><span class="nm"></span><span class="pts"></span>';
+      $('.nm', c).textContent = nameOf(p); $('.pts', c).textContent = p.score;
+      box.appendChild(c);
+    });
+  }
+  function toast(text) {
+    const host = $('#toastHost'); host.innerHTML = '<div class="toast"></div>'; host.firstChild.textContent = text;
+    setTimeout(() => { if (host.firstChild?.textContent === text) host.textContent = ''; }, 2500);
+  }
+  // Tick marks on the focus scale, majors every 25%.
+  (() => { const t = $('#scaleTicks'); for (let i = 0; i <= 20; i++) { const s = document.createElement('span'); s.style.left = (i * 5) + '%'; if (i % 5 === 0) s.className = 'major'; t.appendChild(s); } })();
+
+  /* ----- animation loop ----- */
+  let raf = 0, lastDraw = 0, lastSync = 0;
+  function frame(t) {
+    raf = requestAnimationFrame(frame);
+    const r = G.r; if (!r || r.phase === 'loading') return;
+    let changed = false;
+    if (r.phase === 'running') {
+      r.sharp = Math.min(1, r.base + (performance.now() - r.runStart) / (G.settings.duration * 1000));
+      if (r.sharp >= 1) { reveal({ none: true, why: 'time' }); }
+      changed = true;
+      if (t - lastSync > 450) { lastSync = t; sync(); }
+    } else if (r.anim) {
+      const k = Math.min(1, (performance.now() - r.anim.t0) / r.anim.dur);
+      r.sharp = r.anim.from + (1 - r.anim.from) * (1 - Math.pow(1 - k, 3));
+      if (k >= 1) r.anim = null;
+      changed = true;
+    }
+    if (!changed || t - lastDraw < 30) return;
+    lastDraw = t; lens.draw(r.sharp); updateHud();
+  }
+  function startLoop() { if (!raf) raf = requestAnimationFrame(frame); }
+  function stopLoop() { cancelAnimationFrame(raf); raf = 0; }
+  window.addEventListener('resize', () => { if (G.screen === 'round' && G.r) { lens.layout(); lens.draw(G.r.sharp); } });
+
+  let wake = null;
+  async function keepAwake() { try { if (!wake || wake.released) wake = await navigator.wakeLock?.request('screen'); } catch {} }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && G.screen === 'round') keepAwake(); });
+
+  /* ----- keys: keyboard and TV remote ----- */
+  document.addEventListener('keydown', e => {
+    Sound.wake();
+    const r = G.r, k = e.key, n = /^[1-4]$/.test(k) ? +k : 0;
+    if (!$('#gpDialog').hidden && BACK_KEYS.has(e.keyCode) && e.keyCode !== 8) { $('#gpCancel').click(); e.preventDefault(); return; }
+    if (G.screen === 'round' && r) {
+      if (r.phase === 'running' && (k === 'Enter' || k === ' ' || e.keyCode === 13 || k === 'MediaPlayPause')) { e.preventDefault(); stop(); return; }
+      if (r.phase === 'running' && n && G.players[n - 1]) { e.preventDefault(); stop(G.players[n - 1].id); return; }
+      if (r.phase === 'picking' && n && G.players[n - 1]) { e.preventDefault(); pick(G.players[n - 1].id); return; }
+      if ((r.phase === 'picking' || r.phase === 'judging') && BACK_KEYS.has(e.keyCode)) { e.preventDefault(); back(); return; }
+    }
+    handleArrows(e);
+  });
+
+  /* ----- phone link (PeerJS) ----- */
+  let qrReady = false, peer = null, code = store.get('code', '') || genCode(), idTries = 0;
+  store.set('code', code);
+  const joinUrl = () => location.href.split('#')[0] + '#join-' + code;
+  function linkStatus(text, kind = '') { const el = $('#linkStatus'); el.textContent = text; el.className = 'status' + (kind ? ' ' + kind : ''); }
+  function renderQr() {
+    $('#linkCode').textContent = code; show($('#codeLine'), true);
+    $('#qr').innerHTML = qrReady ? qrSvg(joinUrl()) : 'Code unavailable';
+  }
+  function updateConnCount() {
+    const n = conns.size;
+    linkStatus(n ? `${n} phone${n === 1 ? '' : 's'} connected` : 'Ready. Waiting for a phone.', n ? 'good' : '');
+  }
+  async function startLink() {
+    if (inArtifact || isFile) {
+      show($('#phoneBody'), false);
+      $('#phoneNote').textContent = inArtifact
+        ? 'Phones can connect when the game runs from its own web address. Here, press Stop with OK, Enter, Space or a tap, or press 1–4 to stop for that player.'
+        : 'Open this page from a web address to connect a phone. Meanwhile, press Stop with OK, Enter, Space or a tap.';
+      show($('#phoneNote'), true); return;
+    }
+    loadScript(LIBS.qr).then(() => { qrReady = true; if (peer?.open) renderQr(); }).catch(() => {});
+    try { await loadScript(LIBS.peer); } catch { linkStatus('Could not load the phone link. Check the internet connection.', 'bad'); $('#qr').textContent = 'Offline'; return; }
+    linkStatus('Starting…'); openPeer();
+  }
+  function openPeer() {
+    peer = new Peer(PEER_PREFIX + code, { debug: 0 });
+    peer.on('open', () => { idTries = 0; renderQr(); updateConnCount(); });
+    peer.on('connection', c => {
+      c.on('open', () => { conns.add(c); updateConnCount(); c.send(publicState()); });
+      c.on('data', d => onPhoneData(c, d));
+      c.on('close', () => { conns.delete(c); updateConnCount(); });
+      c.on('error', () => { conns.delete(c); updateConnCount(); });
+    });
+    peer.on('disconnected', () => { setTimeout(() => { if (peer && !peer.destroyed && peer.disconnected) peer.reconnect(); }, 2500); });
+    peer.on('error', err => {
+      if (err.type === 'unavailable-id') {
+        // Usually the TV's previous session is still registered for a moment after a reload.
+        peer.destroy();
+        if (++idTries > 4) { code = genCode(); store.set('code', code); idTries = 0; }
+        linkStatus('Reconnecting…'); setTimeout(openPeer, 3000);
+      } else if (err.type === 'browser-incompatible') {
+        linkStatus('This browser cannot connect to phones. Use Stop on screen instead.', 'bad');
+      } else if (['network', 'server-error', 'socket-error', 'socket-closed'].includes(err.type)) {
+        linkStatus('Phone link lost. Retrying…', 'bad');
+        setTimeout(() => { if (peer.destroyed) openPeer(); else if (peer.disconnected) peer.reconnect(); }, 4000);
+      }
+    });
+  }
+  function publicState() {
+    const r = G.r;
+    const s = r ? (r.phase === 'running' || r.phase === 'reveal' ? r.sharp : r.base) : 0;
+    return {
+      t: 'state', screen: G.screen, phase: r?.phase || null,
+      players: G.players.map((p, i) => ({ id: p.id, name: nameOf(p), raw: p.name, score: p.score, c: i })),
+      photoCount: G.photos.length, n: G.idx + 1, total: G.order.length,
+      sharp: Math.round(s * 100), worth: 100 - Math.round(s * 100),
+      locked: r ? [...r.locked] : [], guesser: r?.guesser || null, result: r?.result || null,
+      label: r?.phase === 'reveal' ? [r.photo.label, r.photo.date ? 'Taken ' + fmtDate(r.photo.date) : ''].filter(Boolean).join(' · ') : '',
+      question: r?.photo?.question || DEFAULT_Q,
+      answer: r && (r.phase === 'picking' || r.phase === 'judging') ? r.photo.label || '' : '',
+      status: $('#importStatus').textContent,
+      sets: SET_LIST.filter(x => online || !x.online).map(x => [x.key, x.label, x.n]),
+      last: G.idx >= G.order.length - 1, clientId: clientId() || null,
+    };
+  }
+  function sync() {
+    if (!conns.size) return;
+    const s = publicState();
+    for (const c of conns) { try { if (c.open) c.send(s); } catch {} }
+  }
+  let syncT = 0; function syncSoon() { clearTimeout(syncT); syncT = setTimeout(sync, 250); }
+  function onPhoneData(c, d) {
+    if (!d || typeof d !== 'object') return;
+    if (d.t === 'hello') { c.send(publicState()); return; }
+    if (d.t === 'photo') {
+      try {
+        const buf = d.buf instanceof ArrayBuffer ? d.buf : d.buf?.buffer;
+        const mime = /^image\/[\w.+-]+$/.test(d.mime || '') ? d.mime : 'image/jpeg';
+        if (buf && buf.byteLength < 12e6 && addPhoto({ blob: new Blob([buf], { type: mime }), date: d.date ? new Date(d.date) : null })) { photosChanged(); setImportStatus(`Received ${G.photos.length} photo${G.photos.length === 1 ? '' : 's'} so far.`, 'good'); }
+      } catch {}
+      try { c.send({ t: 'ack', count: G.photos.length }); } catch {}
+      return;
+    }
+    if (d.t !== 'cmd') return;
+    Sound.wake();
+    switch (d.a) {
+      case 'stop': stop(); break;
+      case 'pick': pick(d.id); break;
+      case 'back': back(); break;
+      case 'judge': judge(!!d.ok); break;
+      case 'next': next(); break;
+      case 'start': if (G.screen === 'setup') startGame(); break;
+      case 'again': if (G.screen === 'final') startGame(); break;
+      case 'setup': if (G.screen === 'final') toSetup(); break;
+      case 'players': setPlayersFrom(d.players); break;
+      case 'set': addSet(String(d.key || '')); break;
+    }
+  }
+
+  /* ----- boot ----- */
+  renderPlayers(); renderSets(); photosChanged(); renderGoogle(); updateStart();
+  GP.init(clientId()); startLink();
+  go('setup');
+  setTimeout(() => {
+    const first = ['#startBtn', '#gpBtn', '#set-animals', '#set-flags'].map(s => $(s)).find(b => b && !b.disabled && !b.hidden);
+    first?.focus({ preventScroll: true });
+  }, 50);
+}
+
+/* ======================================================================
+   REMOTE (the phone)
+   ====================================================================== */
+function startRemote() {
+  show($('#scr-remote'), true);
+  document.documentElement.classList.add('remote-mode');
+  const R = { peer: null, conn: null, state: null, connected: false, code: location.hash.slice(6).toLowerCase(), sending: false, ack: null, pidKey: '' };
+  $('#rCode').value = R.code;
+  const send = msg => { try { if (R.conn?.open) { R.conn.send(msg); return true; } } catch {} return false; };
+  const cmd = (a, extra = {}) => { navigator.vibrate?.(30); send({ t: 'cmd', a, ...extra }); };
+  const pill = (text, kind = '') => { const p = $('#rPill'); p.textContent = text; p.className = 'pill' + (kind ? ' ' + kind : ''); };
+
+  function view(name) { $$('.rv').forEach(v => show(v, v.dataset.view === name)); }
+  function render() {
+    const s = R.state;
+    if (!R.connected || !s) { view('connect'); return; }
+    const colorOf = id => COLORS[s.players.findIndex(p => p.id === id)] || COLORS[0];
+    const nameOf = id => s.players.find(p => p.id === id)?.name || 'Someone';
+    if (s.screen === 'setup') {
+      view('setup');
+      const key = s.players.map(p => p.id).join(',');
+      if (key !== R.pidKey) {
+        R.pidKey = key; const box = $('#rPlayers'); box.textContent = '';
+        s.players.forEach((p, i) => {
+          const row = document.createElement('div'); row.className = 'prow'; row.style.setProperty('--pc', COLORS[i]);
+          row.innerHTML = '<span class="swatch"></span><input type="text" maxlength="16" autocomplete="off"><button class="icon" type="button">×</button>';
+          const inp = $('input', row); inp.id = 'rp-' + p.id; inp.dataset.id = p.id; inp.placeholder = 'Player ' + (i + 1); inp.value = p.raw;
+          inp.addEventListener('input', () => { clearTimeout(R.nameT); R.nameT = setTimeout(sendPlayers, 300); });
+          const rm = $('button', row); rm.disabled = s.players.length < 2; rm.setAttribute('aria-label', 'Remove player ' + (i + 1));
+          rm.addEventListener('click', () => sendPlayers(p.id));
+          box.appendChild(row);
+        });
+      } else {
+        s.players.forEach(p => { const inp = $('#rp-' + p.id); if (inp && document.activeElement !== inp) inp.value = p.raw; });
+      }
+      $('#rAdd').disabled = s.players.length >= 4;
+      $('#rPhotoHead').textContent = `Photos on the TV: ${s.photoCount}`;
+      const sets = s.sets || [], setKey = sets.map(x => x[0]).join(',');
+      if ($('#rSets').dataset.key !== setKey) {
+        const box = $('#rSets'); box.dataset.key = setKey; box.textContent = '';
+        for (const [key, label, n] of sets) {
+          const b = document.createElement('button'); b.type = 'button'; b.className = 'ghost set-btn';
+          b.innerHTML = `<span></span><span class="n">+${n}</span>`; b.firstChild.textContent = label;
+          b.addEventListener('click', () => cmd('set', { key })); box.appendChild(b);
+        }
+      }
+      $('#rTvStatus').textContent = s.status || '';
+      $('#rStart').disabled = !s.photoCount;
+      const gpReady = GP.state === 'ready';
+      show($('#rGpBtn'), !!s.clientId || !!clientId());
+      $('#rGpBtn').disabled = !gpReady || R.sending;
+      $('#rFileBtn').disabled = R.sending;
+      return;
+    }
+    if (s.screen === 'final') {
+      view('final');
+      const ranked = s.players.slice().sort((a, b) => b.score - a.score), top = ranked[0]?.score || 0, w = ranked.filter(p => p.score === top);
+      $('#rWinner').textContent = top === 0 ? 'Nobody scored' : w.length > 1 ? 'Tie: ' + w.map(p => p.name).join(' & ') : w[0].name + ' wins';
+      const ol = $('#rStandings'); ol.textContent = '';
+      ranked.forEach(p => { const li = document.createElement('li'); li.style.setProperty('--pc', COLORS[p.c]); li.innerHTML = '<span></span><span></span>'; li.firstChild.textContent = p.name; li.lastChild.textContent = p.score; ol.appendChild(li); });
+      return;
+    }
+    const tag = `Photo ${s.n} / ${s.total}`;
+    switch (s.phase) {
+      case 'running':
+        view('stop'); $('#rStopTag').textContent = tag; $('#rWorth').textContent = `${s.worth} points if right`; break;
+      case 'picking': {
+        view('pick'); const box = $('#rPick'); const key = 'pick:' + s.locked.join(',');
+        if (box.dataset.key !== key) {
+          box.dataset.key = key; box.textContent = '';
+          s.players.filter(p => !s.locked.includes(p.id)).forEach(p => {
+            const b = document.createElement('button'); b.type = 'button'; b.textContent = p.name; b.style.setProperty('--pc', COLORS[p.c]);
+            b.addEventListener('click', () => cmd('pick', { id: p.id })); box.appendChild(b);
+          });
+        }
+        break;
+      }
+      case 'judging':
+        view('judge');
+        $('#rJudgeTitle').textContent = nameOf(s.guesser) + '’s guess';
+        $('#rQuestion').textContent = s.question || '';
+        if (s.answer) { $('#rAnswer').innerHTML = '<small>Answer</small><span></span>'; $('#rAnswer span').textContent = s.answer; }
+        show($('#rAnswer'), !!s.answer);
+        $('#rRight').textContent = `Correct · +${s.worth}`;
+        $('#rBack').textContent = s.players.length - s.locked.length > 1 ? 'Pick someone else' : 'Keep going';
+        break;
+      case 'reveal':
+        view('reveal');
+        $('#rResult').textContent = s.result?.id ? `+${s.result.pts} for ${nameOf(s.result.id)}` : s.result?.why === 'all-wrong' ? 'Everyone guessed wrong' : 'Nobody got it in time';
+        $('#rResultMeta').textContent = s.label || '';
+        $('#rNext').textContent = s.last ? 'See final scores' : 'Next photo';
+        break;
+      default:
+        view('wait'); $('#rWaitTag').textContent = tag;
+    }
+    $('#rPick').dataset.key = s.phase === 'picking' ? $('#rPick').dataset.key : '';
+  }
+  function sendPlayers(removeId) {
+    const s = R.state; if (!s) return;
+    let list = s.players.map(p => ({ id: p.id, name: $('#rp-' + p.id)?.value ?? p.raw }));
+    if (typeof removeId === 'string') list = list.filter(p => p.id !== removeId);
+    if (removeId === 'add' && list.length < 4) list.push({ id: null, name: '' });
+    send({ t: 'cmd', a: 'players', players: list });
+  }
+
+  /* ----- buttons ----- */
+  $('#rAdd').addEventListener('click', () => sendPlayers('add'));
+  $('#rStart').addEventListener('click', () => cmd('start'));
+  $('#rStop').addEventListener('click', () => cmd('stop'));
+  $('#rCancel').addEventListener('click', () => cmd('back'));
+  $('#rRight').addEventListener('click', () => cmd('judge', { ok: true }));
+  $('#rWrong').addEventListener('click', () => cmd('judge', { ok: false }));
+  $('#rBack').addEventListener('click', () => cmd('back'));
+  $('#rNext').addEventListener('click', () => cmd('next'));
+  $('#rAgain').addEventListener('click', () => cmd('again'));
+  $('#rSetup').addEventListener('click', () => cmd('setup'));
+  $('#rConnect').addEventListener('click', () => {
+    const v = $('#rCode').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (!v) return;
+    R.code = v; history.replaceState(null, '', '#join-' + v); connect();
+  });
+
+  /* ----- sending photos to the TV ----- */
+  function sendStatus(text, kind = '', frac = null) {
+    const el = $('#rSendStatus'); el.textContent = text; el.className = 'status' + (kind ? ' ' + kind : '');
+    show($('#rProg'), frac != null); if (frac != null) $('#rProg i').style.width = Math.round(frac * 100) + '%';
+  }
+  function waitAck(ms = 20000) {
+    return new Promise((res, rej) => {
+      const to = setTimeout(() => { R.ack = null; rej(new Error('The TV stopped answering.')); }, ms);
+      R.ack = () => { clearTimeout(to); R.ack = null; res(); };
+    });
+  }
+  async function sendPhoto({ blob, date }) {
+    const buf = await blob.arrayBuffer();
+    if (!send({ t: 'photo', mime: blob.type || 'image/jpeg', date: date ? +date : null, buf })) throw new Error('Lost the connection to the TV.');
+    await waitAck();
+  }
+  async function sendMany(total, produce) {
+    R.sending = true; render();
+    let ok = 0, bad = 0;
+    try {
+      for (let i = 0; i < total; i++) {
+        sendStatus(`Sending ${i + 1} of ${total}…`, '', i / total);
+        let p; try { p = await produce(i); } catch { bad++; continue; }
+        await sendPhoto(p); ok++;
+      }
+      sendStatus(`Sent ${ok} photo${ok === 1 ? '' : 's'} to the TV.${bad ? ` ${bad} could not be read.` : ''}`, 'good');
+    } catch (err) { sendStatus(err.message || 'Sending failed.', 'bad'); }
+    finally { R.sending = false; render(); }
+  }
+  $('#rFileBtn').addEventListener('click', () => $('#rFile').click());
+  $('#rFile').addEventListener('change', e => {
+    const files = [...e.target.files]; e.target.value = '';
+    if (files.length) sendMany(files.length, i => prepFile(files[i]));
+  });
+  $('#rGpBtn').addEventListener('click', async () => {
+    if (GP.state !== 'ready') return;
+    let session = null;
+    try {
+      await GP.signIn();
+      session = await GP.createSession();
+      const a = $('#rGpOpen'); a.href = session.pickerUri; show(a, true); $('#rGpBtn').disabled = true;
+      sendStatus('Tap Open Google Photos, choose your photos, then come back here.');
+      await GP.waitForPick(session);
+      show(a, false);
+      sendStatus('Getting your photos…');
+      const items = await GP.listPhotos(session.id);
+      const room = Math.max(0, MAX_PHOTOS - (R.state?.photoCount || 0)), take = sample(items, room);
+      await sendMany(take.length, i => GP.download(take[i]));
+    } catch (err) { show($('#rGpOpen'), false); sendStatus(err.message || 'Google Photos failed.', 'bad'); render(); }
+    finally { if (session) GP.endSession(session.id); }
+  });
+  GP.onChange = render;
+
+  /* ----- connection ----- */
+  let retryT = 0;
+  async function connect() {
+    clearTimeout(retryT);
+    R.connected = false; render();
+    if (!R.code) { pill('No code', 'bad'); $('#rConnTitle').textContent = 'Enter the code from the TV'; return; }
+    $('#rConnTitle').textContent = 'Connecting to the TV…'; $('#rConnText').textContent = 'Keep the game open on the TV.';
+    pill('Connecting…');
+    try { await loadScript(LIBS.peer); } catch { pill('Offline', 'bad'); $('#rConnText').textContent = 'Could not load the connection library. Check the internet connection.'; retryT = setTimeout(connect, 5000); return; }
+    if (!R.peer || R.peer.destroyed) {
+      R.peer = new Peer({ debug: 0 });
+      R.peer.on('error', err => {
+        if (err.type === 'peer-unavailable') { pill('TV not found', 'bad'); $('#rConnTitle').textContent = 'Can’t find the TV'; $('#rConnText').textContent = 'Check that the game is open on the TV and the code matches. Retrying…'; }
+        else pill('Retrying…', 'bad');
+        retryT = setTimeout(connect, 3500);
+      });
+      R.peer.on('disconnected', () => { setTimeout(() => { if (!R.peer.destroyed && R.peer.disconnected) R.peer.reconnect(); }, 2000); });
+      await new Promise(res => { if (R.peer.open) res(); else R.peer.once('open', res); });
+    }
+    try { R.conn?.close(); } catch {}
+    const c = R.peer.connect(PEER_PREFIX + R.code, { reliable: true });
+    R.conn = c;
+    c.on('open', () => { if (R.conn !== c) return; R.connected = true; pill('Connected', 'ok'); c.send({ t: 'hello' }); });
+    c.on('data', d => {
+      if (R.conn !== c || !d) return;
+      if (d.t === 'ack') { R.ack?.(); return; }
+      if (d.t === 'state') {
+        R.state = d;
+        if (d.clientId && !clientId()) GP.init(d.clientId); else GP.init(clientId());
+        render();
+      }
+    });
+    c.on('close', () => { if (R.conn !== c) return; R.connected = false; pill('Reconnecting…', 'bad'); render(); retryT = setTimeout(connect, 2000); });
+  }
+  document.addEventListener('keydown', handleArrows);
+  render(); connect();
+}
+})();
+</script>
+
+</body>
+</html>
